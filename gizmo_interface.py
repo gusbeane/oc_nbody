@@ -5,11 +5,12 @@ from scipy import interpolate
 from scipy.spatial import cKDTree
 from rbf.interpolate import RBFInterpolant
 from rbf.basis import phs3
-#from colossus.cosmology import cosmology
+from grid import grid
+from amuse.units import units
 
 class gizmo_interface(object):
     def __init__(self, directory, startnum, endnum,
-                    one_prior=True):
+                    num_prior=3):
         
         self.convert_kms_Myr_to_kpc = 20000.0*np.pi / (61478577.0) # thanks wolfram alpha
 
@@ -17,10 +18,21 @@ class gizmo_interface(object):
         self.nclose = 100
         self.basis = phs3
         self.order = 5
+        self.rcut_max = 14
+        self.rcut_min = 4
 
         self.directory = directory
         self.startnum = startnum
         self.endnum = endnum
+
+        Rmin = 7.
+        Rmax = 9.
+        zmin = -1.
+        zmax = 1.
+
+        self.grid_rmax = (250.0 + 25.0)/1000.0
+        self.grid_size = 0.5
+        self.grid_resolution = 20
         
         # read in first snapshot, get rotation matrix
         self.first_snapshot = gizmo.io.Read.read_snapshots(['star','gas','dark'], 'index', startnum, 
@@ -37,20 +49,21 @@ class gizmo_interface(object):
         # store some other relevant information
         self.first_snapshot_time_in_Myr = self.first_snapshot.snapshot['time'] * 1000.0
 
-        # recenter first snapshot
+        # read in last snapshot stars
+        #self.last_snapshot_stars = gizmo.io.Read.read_snapshots('star', 'index', endnum, 
+        #                                            simulation_directory=self.directory, assign_center=False)#,
+        #                                            #particle_subsample_factor=20)
+
+        # recenter first snapshot, last snapshot
         self._recenter_snapshot_(self.first_snapshot)
+        #self._recenter_snapshot_(self.last_snapshot_stars)
 
         # read in all snapshots, but only the necessary quantities, and recenter
-        if one_prior:
-            self.snapshot_indices = range(startnum-1, endnum+1)
-            self.initial_key = 1
-        else:
-            self.snapshot_indices = range(startnum, endnum+1)
-            self.initial_key = 0
+        self.snapshot_indices = range(startnum-num_prior, endnum+1)
+        self.initial_key = num_prior
 
-
-        self.snapshots = gizmo.io.Read.read_snapshots(['star','dark'], 'index', self.snapshot_indices, 
-                                                        properties=['position', 'potential'], 
+        self.snapshots = gizmo.io.Read.read_snapshots(['star','gas','dark'], 'index', self.snapshot_indices, 
+                                                        properties=['position', 'velocity', 'potential', 'id'], 
                                                         simulation_directory=self.directory, assign_center=False)#,
                                                         #particle_subsample_factor=20) #, properties=['position','potential'])
         for snap in self.snapshots:
@@ -64,13 +77,23 @@ class gizmo_interface(object):
         for snap in self.snapshots:
             self._comoving_to_physical_(snap)
         
-        # generate potential, position arrays
-        self.position_array = self._position_array_()
-        self.potential_array = self._potential_array_()
+        # find starting star
+        self.chosen_position_z0, self.chosen_velocity_z0, self.chosen_index_z0, self.chosen_id = self.starting_star(Rmin, Rmax, zmin, zmax)
 
-        # set up interpolator
-        self.position_interpolator = self._init_position_interpolators_()
-        self.potential_interpolator = self._init_potential_interpolators_()
+        # set up trackers
+        self._init_interpolators_()
+
+        # set up grid
+        self.grid = grid(self.grid_size, self.grid_resolution)
+        self.grid.update_evolved_grid(self.chosen_positions[self.initial_key], self.chosen_velocities[self.initial_key])
+
+        # set up rbfi for potential at each snapshot
+        self._init_grid_rbfi_()
+        self._execute_grid_rbfi_()
+
+        # set up individual potential interpolators
+        self._gen_potential_grid_interpolators_()
+        self._execute_potential_grid_interpolators_(0.0)
 
     def _time_in_Myr_(self):
         original_times_in_Gyr = np.array([self.snapshots[i].snapshot['time'] for i in range(len(self.snapshots))])
@@ -101,18 +124,57 @@ class gizmo_interface(object):
                 out_dark[i][j] = [all_dark_position[k][i][j] for k in range(len(self.snapshots))]
         return np.concatenate((out_star,out_dark))
 
-
-    def _init_position_interpolators_(self):
-        interpolators = np.zeros(np.shape(self.position_array)[0:2]).tolist()
-        for i in range(len(interpolators)):
-            for j in range(3):
-                interpolators[i][j] = interpolate.splrep(self.time_in_Myr, self.position_array[i][j])
+    def _gen_interpolator_(self, pos_or_vel):
+        interpolators = np.zeros(3).tolist()
+        for i in range(3):
+            interpolators[i] = interpolate.splrep(self.time_in_Myr, pos_or_vel[:,i])
+            #interpolators[i][j] = interpolate.splrep(self.time_in_Myr, self.position_array[i][j], k=1)
         return interpolators
     
+    def _init_interpolators_(self):
+        self.chosen_indices = [int(np.where(self.snapshots[i]['star']['id'] == self.chosen_id)[0]) for i in range(len(self.snapshots)) ]
+        self.chosen_positions = [self.snapshots[i]['star']['position'][self.chosen_indices[i]] for i in range(len(self.snapshots))]
+        self.chosen_velocities = [self.snapshots[i]['star']['velocity'][self.chosen_indices[i]] for i in range(len(self.snapshots))]
+
+        self.chosen_indices = np.array(self.chosen_indices)
+        self.chosen_positions = np.array(self.chosen_positions)
+        self.chosen_velocities = np.array(self.chosen_velocities)
+
+        self.chosen_pos_interp = self._gen_interpolator_(self.chosen_positions)
+        self.chosen_vel_interp = self._gen_interpolator_(self.chosen_velocities)
+
+    def _gen_potential_grid_interpolators_(self):
+        self.grid.grid_interpolators = []
+        for i in range(len(self.grid.evolved_grid)):
+            self.grid.grid_interpolators.append(interpolate.splrep(self.time_in_Myr, self.grid.snapshot_potential[:,i]))
+
+    def _execute_potential_grid_interpolators_(self, t):
+        self.grid.evolved_potential = []
+        for i in range(len(self.grid.evolved_grid)):
+            self.grid.evolved_potential.append(interpolate.splev(t, self.grid.grid_interpolators[i]))
+        self.grid.evolved_potential = np.array(self.grid.evolved_potential)
+
+    def _init_grid_rbfi_(self):
+        self.grid_rbfi = []
+        for i in range(len(self.snapshots)):
+            all_positions = np.concatenate((self.snapshots[i]['star']['position'], self.snapshots[i]['dark']['position'], self.snapshots[i]['gas']['position']))
+            all_potentials = np.concatenate((self.snapshots[i]['star']['potential'], self.snapshots[i]['dark']['potential'], self.snapshots[i]['gas']['potential']))
+            rmag = np.linalg.norm(np.subtract(all_positions, self.chosen_positions[i]), axis=1)
+            keys = np.where(rmag < self.grid_rmax)
+            self.grid_rbfi.append(RBFInterpolant(all_positions[keys], all_potentials[keys], basis=self.basis, order=self.order))
+
+    def _execute_grid_rbfi_(self):
+        self.grid.snapshot_potential = []
+        for i in range(len(self.snapshots)):
+            self.grid.update_evolved_grid(self.chosen_positions[i], self.chosen_velocities[i])
+            self.grid.snapshot_potential.append(self.grid_rbfi[i](self.grid.evolved_grid))
+        self.grid.snapshot_potential = np.array(self.grid.snapshot_potential)
+
     def _init_potential_interpolators_(self):
         interpolators = np.zeros(np.shape(self.potential_array)[0:2]).tolist()
         for i in range(len(interpolators)):
             interpolators[i] = interpolate.splrep(self.time_in_Myr, self.potential_array[i])
+            #interpolators[i] = interpolate.splrep(self.time_in_Myr, self.potential_array[i], k=1)
         return interpolators
     
     def _recenter_snapshot_(self, part):
@@ -135,38 +197,40 @@ class gizmo_interface(object):
     def _comoving_to_physical_(self, part):
         for key in part.keys():
             part[key]['position'] *= part.snapshot['scalefactor']
+    
+    def _clean_central_particles_(self):
+        # TODO REWRITE THIS
+        rmag_star = np.linalg.norm(self.first_snapshot['star']['position'], axis=1)
+        rmag_dark = np.linalg.norm(self.first_snapshot['dark']['position'], axis=1)
+        rmag = np.concatenate((rmag_star, rmag_dark))
+        rbool = np.logical_and(rmag > self.rcut_min, rmag < self.rcut_max)
+        keys = np.where(rbool)[0]
+        self.position_array = self.position_array[keys]
+        self.potential_array = self.potential_array[keys]
 
     def evolve_model(self, time, timestep=None):
-        # TODO parallelize this function
 
-        # UNCOMMENT THIS WHEN IMPLEMENT AMUSE
-        # t_in_Myr = time.value_in(units.Myr)
-        t_in_Myr = time
-        self.evolved_position = np.zeros(np.shape(self.position_array)[0:2])
-        self.evolved_potential = np.zeros(np.shape(self.potential_array)[0:1])
-        for i in range(len(self.evolved_position)):
-            for j in range(3):
-                self.evolved_position[i][j] = interpolate.splev(t_in_Myr, self.position_interpolator[i][j])
-            self.evolved_potential[i] = interpolate.splev(t_in_Myr, self.potential_interpolator[i])
+        this_t_in_Myr = time.value_in(units.Myr)
+        self.chosen_evolved_position = [float(interpolate.splev(this_t_in_Myr, self.chosen_pos_interp[i])) for i in range(3)]
+        self.chosen_evolved_velocity = [float(interpolate.splev(this_t_in_Myr, self.chosen_vel_interp[i])) for i in range(3)]
+
+        self.grid.update_evolved_grid(self.chosen_evolved_position, self.chosen_evolved_velocity)
+        self._execute_potential_grid_interpolators_(this_t_in_Myr)
         
-        rmag = np.linalg.norm(self.evolved_position, axis=1)
-        keys = np.where(np.logical_and(rmag > 3, rmag < 13))[0]
-        self.evolved_position = self.evolved_position[keys]
-        self.evolved_potential = self.evolved_potential[keys]
-        self._kdtree_ = cKDTree(self.evolved_position)
+        self.grid._grid_evolved_kdtree_ = cKDTree(self.grid.evolved_grid)
 
     def _get_rbfi_(self, x, y, z):
         # returns the rbfi interpolator
         # using the user defined number of points, basis, and order
-        dist, ids = self._kdtree_.query([x,y,z], self.nclose)
-        rbfi = RBFInterpolant(self.evolved_position[ids], self.evolved_potential[ids], basis=self.basis, order=self.order)
+        dist, ids = self.grid._grid_evolved_kdtree_.query([x,y,z], self.nclose)
+        rbfi = RBFInterpolant(self.grid.evolved_grid[ids], self.grid.evolved_potential[ids], basis=self.basis, order=self.order)
         return rbfi
     
     def get_potential_at_point(self, eps, xlist, ylist, zlist):
         # UNCOMMENT THIS WHEN IMPLEMENT AMUSE
-        # xlist = xlist.value_in(units.kpc)
-        # ylist = ylist.value_in(units.kpc)
-        # zlist = zlist.value_in(units.kpc)
+        xlist = xlist.value_in(units.kpc)
+        ylist = ylist.value_in(units.kpc)
+        zlist = zlist.value_in(units.kpc)
 
         if hasattr(xlist,'__iter__'):
             potlist = []
@@ -184,9 +248,9 @@ class gizmo_interface(object):
 
     def get_gravity_at_point(self, eps, xlist, ylist, zlist):
         # UNCOMMENT THIS WHEN IMPLEMENT AMUSE
-        #xlist = xlist.value_in(units.kpc)
-        #ylist = ylist.value_in(units.kpc)
-        #zlist = zlist.value_in(units.kpc)
+        xlist = xlist.value_in(units.kpc)
+        ylist = ylist.value_in(units.kpc)
+        zlist = zlist.value_in(units.kpc)
 
         if hasattr(xlist,'__iter__'):
             axlist = []
@@ -212,8 +276,12 @@ class gizmo_interface(object):
             return ax, ay, az
 
 
-    def starting_star(self, Rmin, Rmax, zmin, zmax, agemax_in_Gyr=1, seed=1776):
+    def starting_star(self, Rmin, Rmax, zmin, zmax, agemin_in_Gyr=1.2, agemax_in_Gyr=2.0, seed=1776):
         np.random.seed(seed)
+        #starages = self.first_snapshot['star'].prop('age')
+        #pos = self.first_snapshot['star']['position']
+        #vel = self.first_snapshot['star']['velocity']
+        
         starages = self.first_snapshot['star'].prop('age')
         pos = self.first_snapshot['star']['position']
         vel = self.first_snapshot['star']['velocity']
@@ -221,7 +289,7 @@ class gizmo_interface(object):
         Rstar = np.sqrt(pos[:,0]*pos[:,0] + pos[:,1]*pos[:,1])
         zstar = pos[:,2]
 
-        agebool = starages < agemax_in_Gyr
+        agebool = np.logical_and(starages > agemin_in_Gyr, starages < agemax_in_Gyr)
         Rbool = np.logical_and(Rstar > Rmin, Rstar < Rmax)
         zbool = np.logical_and(zstar > zmin, zstar < zmax)
 
@@ -229,7 +297,8 @@ class gizmo_interface(object):
         keys = np.where(totbool)[0]
 
         chosen_one = np.random.choice(keys)
-        return pos[chosen_one], vel[chosen_one], chosen_one
+        chosen_id = self.first_snapshot['star']['id'][chosen_one]
+        return pos[chosen_one], vel[chosen_one], chosen_one, chosen_id
 
 
 if __name__ == '__main__':
