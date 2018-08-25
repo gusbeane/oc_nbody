@@ -1,0 +1,36 @@
+# this is a configparser configuration file
+# you may start lines as comments with '#' or ';'
+# you may start inline comments with ';' only
+#
+# optional arguments in this file have default values
+# if no default value, that argument is required
+
+[simulation]
+simulation_directory = /mnt/ceph/users/firesims/core/m12i_res7100/
+cache_directory = /mnt/ceph/users/abeane/oc_evaporation_pt1/cache
+startnum = 580      ; first snapshot index (where the oc sim starts)
+endnum = 585        ; last snapshot index
+num_prior = 3       ; the number of snapshots loaded before the first snapshot (default: 3)
+
+[interpolation]
+nclose = 300 ; number of close points to use in interpolation (default: 150)
+basis = phs3 ; basis for rbf (default: phs3)
+order = 5    ; order for rbf (default: 5)
+
+[starting_star]
+ss_Rmin = 7.0   ; min R for starting star [kpc]
+ss_Rmax = 9.0   ; max R ... [kpc]
+ss_zmin = -0.1  ; min z for starting star [kpc]
+ss_zmax = 0.1   ; max z ... [kpc]
+ss_seed = 1776  ; seed for ss rng (default: 1776)
+ss_agemin_in_Gyr = 0 ; min age for ss (default: 0) [Gyr]
+ss_agemax_in_Gyr = 1 ; max age for ss (default: 1) [Gyr]
+
+[grid]
+# see paper for explanation of x, y
+grid_x_size = 0.3   ; size of grid in "x direction" [kpc]
+grid_y_size = 0.3   ; size of grid in "y direction" [kpc]
+grid_z_size = 2.0   ; size of grid in z direction [kpc]
+grid_buffer = 0.025     ; size of buffer between grid and sim for interpolation (default: 0.025) [kpc]
+grid_resolution = 0.02 ; spacing between grid points [kpc]
+
