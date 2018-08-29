@@ -1,12 +1,12 @@
-from ConfigParser import SafeConfigParser as sp
+from configparser import ConfigParser
 
 class options_reader(object):
     def __init__(self, file):
-        self.parser = sp()
+        self.parser = ConfigParser(inline_comment_prefixes=';')
         try:
             self.parser.read(file)
         except:
-            print 'couldnt read options file'
+            print('couldnt read options file')
             raise Exception('Cant read the provided options file:' + file)
 
         self.options = {}
@@ -43,7 +43,8 @@ class options_reader(object):
                 self.options[opt] = int(self.options[opt])
 
         float_options = ['ss_Rmin', 'ss_Rmax', 'ss_zmin', 'ss_zmax',
-                         'grid_x_size', 'grid_y_size', 'grid_z_size', 'grid_buffer', 'grid_resolution',
+                         'grid_x_size', 'grid_y_size', 'grid_z_size', 'grid_buffer', 
+                         'grid_resolution',
                          'ss_agemin_in_Gyr', 'ss_agemax_in_Gyr']
         for opt in float_options:
             if opt in self.options.keys():
@@ -51,9 +52,10 @@ class options_reader(object):
 
         self._convert_rbf_basis_(self.options['basis'])
 
-        self.options['grid_x_max'] = self.options['grid_x_size'] + self.options['grid_buffer']
-        self.options['grid_y_max'] = self.options['grid_y_size'] + self.options['grid_buffer']
-        self.options['grid_z_max'] = self.options['grid_z_size'] + self.options['grid_buffer']
+        for s in ['x', 'y', 'z']:
+            val = self.options['grid_'+s+'_size']
+            val += self.options['grid_buffer']
+            self.options['grid_'+s+'_max'] = val
 
     def set_options(self, object):
         for key in self.options.keys():
@@ -62,16 +64,16 @@ class options_reader(object):
     def _read_required_option_(self, category, option):
         try:
             self.options[option] = self.parser.get(category, option)
-            print 'set option: ', option, ' as: ', self.options[option]
+            print('set option: ', option, ' as: ', self.options[option])
         except:
             raise Exception('Couldnt find required option: ' + option)
 
     def _read_optional_option_(self, category, option, default):
         try:
             self.options[option] = self.parser.get(category, option)
-            print 'set option: ', option, ' as: ', self.options[option]
+            print('set option: ', option, ' as: ', self.options[option])
         except:
-            print 'Couldnt find option', option, ', using default: ', default
+            print('Couldnt find option', option, ', using default: ', default)
             self.options[option] = default
 
     def _convert_rbf_basis_(self, basis_string):
@@ -143,3 +145,7 @@ class options_reader(object):
             self.options['basis'] = wen32
         else:
             raise Exception("Can't recognize given basis: "+basis_string)
+
+if __name__ == '__main__':
+    import sys
+    g = options_reader(sys.argv[1])

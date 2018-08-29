@@ -9,10 +9,10 @@ from scipy import interpolate
 from scipy.spatial import cKDTree
 from rbf.interpolate import RBFInterpolant
 from rbf.basis import phs3
-from grid import grid
+from oc_nbody.grid import grid
 from amuse.units import units
-from options import options_reader
-import cPickle as pickle
+from oc_nbody.options import options_reader
+import pickle
 from hashlib import md5
 import time
 
@@ -34,26 +34,35 @@ class gizmo_interface(object):
         # set up grid
         self._init_grid_()
 
+        self.evolve_model(0 | units.Myr)w
+
     def _read_snapshots_(self):
         # read in first snapshot, get rotation matrix
         
-        """
+        # just gonna take a peak into the sim and see if we have it in cache
         head = gizmo.io.Read.read_header(snapshot_value=self.startnum, simulation_directory=self.simulation_directory)
         sim_name = head['simulation.name'].replace(" ","_")
-        cache_name = self.cache_directory + '/first_snapshot_'+sim_name+'_index'+str(self.startnum)+'.p'
-        
+        cache_name = 'first_snapshot_'+sim_name+'_index'+str(self.startnum)+'.p'
+        cache_file = self.cache_directory + '/' + cache_name
+
         try:
-            self.first_snapshot = dill.load(open(cache_name, 'rb'))
+            self.first_snapshot = pickle.load(open(cache_file, 'rb'))
+            print('found and loaded cached file for first_snapshot:')
+            print(cache_name)
         except:
+            print('couldnt find cached file for first_snapshot:')
+            print(cache_name)
+            print('constructing...')
             self.first_snapshot = gizmo.io.Read.read_snapshots(['star','gas','dark'], 'index', self.startnum, 
                                                     simulation_directory=self.simulation_directory, assign_center=False)#,
                                                     #particle_subsample_factor=20)
-            dill.dump(self.first_snapshot, open(cache_name, 'wb'), protocol=2)
+            pickle.dump(self.first_snapshot, open(cache_file, 'wb'), protocol=4)
+        
         """
-
         self.first_snapshot = gizmo.io.Read.read_snapshots(['star','gas','dark'], 'index', self.startnum, 
                                         simulation_directory=self.simulation_directory, assign_center=False)#,
                                         #particle_subsample_factor=20)
+        """
 
         gizmo.io.Read.assign_center(self.first_snapshot)
         gizmo.io.Read.assign_principal_axes(self.first_snapshot)
@@ -68,25 +77,31 @@ class gizmo_interface(object):
         self.snapshot_indices = range(self.startnum-self.num_prior, self.endnum+1)
         self.initial_key = self.num_prior
 
-        """
         init = self.snapshot_indices[0]
         fin = self.snapshot_indices[-1]
-        cache_name = self.cache_directory + '/snapshots_'+sim_name+'_start'+str(init)+'_end'+str(fin)+'.p'
-        
+        cache_name = 'snapshots_'+sim_name+'_start'+str(init)+'_end'+str(fin)+'.p'
+        cache_file = self.cache_directory + '/' + cache_name
+
         try:
-            self.snapshots = dill.load(open(cache_name, 'rb'))
+            self.snapshots = pickle.load(open(cache_file, 'rb'))
+            print('found and loaded cached file for snapshots:')
+            print(cache_name)
         except:
+            print('couldnt find cached file for snapshots:')
+            print(cache_name)
+            print('constructing...')
             self.snapshots = gizmo.io.Read.read_snapshots(['star','gas','dark'], 'index', self.snapshot_indices, 
                                                         properties=['position', 'velocity', 'potential', 'id'], 
                                                         simulation_directory=self.simulation_directory, assign_center=False)#,
                                                         #particle_subsample_factor=20) #, properties=['position','potential'])
-            dill.dump(self.snapshots, open(cache_name, 'wb'), protocol=2)
-        """
+            pickle.dump(self.snapshots, open(cache_file, 'wb'), protocol=4)
 
+        """
         self.snapshots = gizmo.io.Read.read_snapshots(['star','gas','dark'], 'index', self.snapshot_indices, 
                                             properties=['position', 'velocity', 'potential', 'id'], 
                                             simulation_directory=self.simulation_directory, assign_center=False)#,
                                             #particle_subsample_factor=20) #, properties=['position','potential'])
+        """
 
         for snap in self.snapshots:
             self._assign_self_center_(snap)
@@ -103,7 +118,7 @@ class gizmo_interface(object):
             offset *= self.convert_kms_Myr_to_kpc
             this_center_position = self.center_position + offset
 
-        print 'this center position:', this_center_position
+        print('this center position:', this_center_position)
         part.center_position = this_center_position
         part.center_velocity = self.center_velocity
         part.principal_axes_vectors = self.principal_axes_vectors
@@ -159,9 +174,9 @@ class gizmo_interface(object):
             self.grid = pickle.load(open(cache_file, 'rb'))
             return None
         except:
-            print 'couldnt find cached grid:'
-            print cache_name
-            print 'constructing...'
+            print('couldnt find cached grid:')
+            print(cache_name)
+            print('constructing...')
             pass
 
         self.grid = grid(self.grid_x_size, self.grid_y_size, self.grid_z_size, self.grid_resolution,
@@ -209,7 +224,7 @@ class gizmo_interface(object):
         ybool = y_mag < y_max
         zbool = z_mag < z_max
         keys = np.where(np.logical_and(np.logical_and(xbool,ybool), zbool))[0]
-        print 'key length:', len(keys)
+        print('key length:', len(keys))
 
         self._snapshot_relevant_positions_ = all_positions[keys]
         self._snapshot_relevant_potentials_ = all_potentials[keys]
@@ -333,9 +348,9 @@ class gizmo_interface(object):
         self._execute_potential_grid_interpolators_(this_t_in_Myr)
         
         self.grid._grid_evolved_kdtree_ = cKDTree(self.grid.evolved_grid)
-        self._evolved_rbfi_ = RBFInterpolant(self.grid.evolved_grid, self.grid.evolved_potential, basis=self.basis, order=self.order)
+        #self._evolved_rbfi_ = RBFInterpolant(self.grid.evolved_grid, self.grid.evolved_potential, basis=self.basis, order=self.order)
         
-        print 'evolved model to t (Myr):', this_t_in_Myr
+        print('evolved model to t (Myr):', this_t_in_Myr)
 
     def _evolve_starting_star_(self, time_in_Myr):
         self.chosen_evolved_position = [float(interpolate.splev(time_in_Myr, self.chosen_pos_interp[i])) for i in range(3)]
@@ -376,19 +391,19 @@ class gizmo_interface(object):
         if hasattr(xlist,'__iter__'):
             potlist = []
             for x,y,z in zip(xlist,ylist,zlist):
-                #rbfi = self._get_rbfi_(x,y,z)
-                rbfi = self._evolved_rbfi_
+                rbfi = self._get_rbfi_(x,y,z)
+                #rbfi = self._evolved_rbfi_
                 potlist.append( rbfi( [[x,y,z],[x,y,z]] )[0] )
             return potlist | units.kms * units.kms
             #return potlist
         
         else:
-            #rbfi = self._get_rbfi_(xlist, ylist, zlist)
-            rbfi = self._evolved_rbfi_
+            rbfi = self._get_rbfi_(xlist, ylist, zlist)
+            #rbfi = self._evolved_rbfi_
         #return rbfi([[xlist, ylist, zlist],[xlist, ylist, zlist]])[0]
         return rbfi([[xlist, ylist, zlist],[xlist, ylist, zlist]])[0] | units.kms * units.kms
 
-    
+    """
     def get_gravity_at_point(self, eps, xlist, ylist, zlist):
         xlist = xlist.value_in(units.kpc)
         ylist = ylist.value_in(units.kpc)
@@ -411,7 +426,6 @@ class gizmo_interface(object):
             ay = -rbfi([[xlist, ylist, zlist],[xlist, ylist, zlist]], diff=(0,1,0) )[0] | units.kms*units.kms/units.kpc
             az = -rbfi([[xlist, ylist, zlist],[xlist, ylist, zlist]], diff=(0,0,1) )[0] | units.kms*units.kms/units.kpc
             return ax, ay, az
-    
     """
     def get_gravity_at_point(self, eps, xlist, ylist, zlist):
         # UNCOMMENT THIS WHEN IMPLEMENT AMUSE
@@ -429,19 +443,19 @@ class gizmo_interface(object):
                 aylist.append( -rbfi( [[x,y,z],[x,y,z]], diff=(0,1,0) )[0] )
                 azlist.append( -rbfi( [[x,y,z],[x,y,z]], diff=(0,0,1) )[0] )
             # UNCOMMENT THIS WHEN IMPLEMENT AMUSE
-            ax = axlist# | units.kms*units.kms/units.kpc
-            ay = aylist# | units.kms*units.kms/units.kpc
-            az = azlist# | units.kms*units.kms/units.kpc
+            ax = axlist | units.kms*units.kms/units.kpc
+            ay = aylist | units.kms*units.kms/units.kpc
+            az = azlist | units.kms*units.kms/units.kpc
             return ax, ay, az 
         
         else:
             rbfi = self._get_rbfi_(xlist, ylist, zlist)
             # UNCOMMENT THIS WHEN IMPLEMENT AMUSE
-            ax = -rbfi([[xlist, ylist, zlist],[xlist, ylist, zlist]], diff=(1,0,0) )[0]# | units.kms*units.kms/units.kpc
-            ay = -rbfi([[xlist, ylist, zlist],[xlist, ylist, zlist]], diff=(0,1,0) )[0]# | units.kms*units.kms/units.kpc
-            az = -rbfi([[xlist, ylist, zlist],[xlist, ylist, zlist]], diff=(0,0,1) )[0]# | units.kms*units.kms/units.kpc
+            ax = -rbfi([[xlist, ylist, zlist],[xlist, ylist, zlist]], diff=(1,0,0) )[0] | units.kms*units.kms/units.kpc
+            ay = -rbfi([[xlist, ylist, zlist],[xlist, ylist, zlist]], diff=(0,1,0) )[0] | units.kms*units.kms/units.kpc
+            az = -rbfi([[xlist, ylist, zlist],[xlist, ylist, zlist]], diff=(0,0,1) )[0] | units.kms*units.kms/units.kpc
             return ax, ay, az
-    """
+    
 
     def _init_starting_star_(self):
         self.chosen_position_z0, self.chosen_velocity_z0, self.chosen_index_z0, self.chosen_id = self.starting_star(
