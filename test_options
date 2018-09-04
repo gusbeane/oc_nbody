@@ -3,7 +3,15 @@
 # you may start inline comments with ';' only
 #
 # optional arguments in this file have default values
-# if no default value, that argument is required
+# if no default value is listed, that argument is required
+
+[general]
+output_directory = /mnt/ceph/users/abeane/oc_evaporation_pt1/test/dump
+ncpu = 12 ; number of cpus available (default: 1)
+gpu_enabled = false ; whether or not to use the gpu version of ph4 (default: false)
+ngpu = 1 ; number of gpus available (default: 1)
+
+timestep = 0.1 ; timestep for cluster integrati
 
 [simulation]
 simulation_directory = /mnt/ceph/users/firesims/core/m12i_res7100/
@@ -13,9 +21,25 @@ endnum = 585        ; last snapshot index
 num_prior = 3       ; the number of snapshots loaded before the first snapshot (default: 3)
 
 [interpolation]
-nclose = 300 ; number of close points to use in interpolation (default: 150)
+nclose = 150 ; number of close points to use in interpolation (default: 150)
 basis = phs3 ; basis for rbf (default: phs3)
 order = 5    ; order for rbf (default: 5)
+
+[cluster]
+N = 1024        ; number of stars in the system
+W0 = 3          ; king parameter
+Mcluster = 1e3  ; mass of cluster [Msun]
+Rcluster = 0.8  ; size of cluster [pc]
+softening = 0.01 ; softening length for cluster [pc]
+
+nbodycode = ph4      ; code to use (options: ph4)
+timestep = 0.1       ; timestep for cluster integrator [Myr]
+tend  = 75.0         ; ending time for cluster
+
+# this will remove particles which move further than eject_cut pc
+# away from the median of the star cluster
+# very useful
+eject_cut = 300  ; (default: 300) [kpc]
 
 [starting_star]
 ss_Rmin = 7.0   ; min R for starting star [kpc]

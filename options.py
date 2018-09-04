@@ -11,6 +11,14 @@ class options_reader(object):
 
         self.options = {}
         
+        # read in general parameters
+        for opt in ['output_directory']:
+            self._read_required_option_('general', opt)
+
+        self._read_optional_option_('general', 'ncpu', '1')
+        self._read_optional_option_('general', 'gpu_enabled', 'false')
+        self._read_optional_option_('general', 'ngpu', '1')
+
         # read in simulation parameters
         for opt in ['simulation_directory', 'cache_directory', 'startnum', 'endnum']:
             self._read_required_option_('simulation', opt)
@@ -21,6 +29,13 @@ class options_reader(object):
         self._read_optional_option_('interpolation', 'nclose', '150')
         self._read_optional_option_('interpolation', 'basis', 'phs3')
         self._read_optional_option_('interpolation', 'order', '5')
+
+        # read in cluster parameters
+        for opt in ['N', 'W0', 'Mcluster', 'Rcluster', 'softening', 'nbodycode',
+                    'timestep', 'tend']:
+            self._read_required_option_('cluster', opt)
+
+        self._read_optional_option_('cluster', 'eject_cut', '300.0')
 
         # read in starting_star parameters
         for opt in ['ss_Rmin', 'ss_Rmax', 'ss_zmin', 'ss_zmax']:
@@ -37,7 +52,8 @@ class options_reader(object):
         self._read_optional_option_('grid', 'grid_buffer', '25.0')
 
         # convert relevant parameters
-        int_options = ['startnum', 'endnum', 'num_prior', 'nclose', 'order', 'ss_seed']
+        int_options = ['startnum', 'endnum', 'num_prior', 'nclose', 'order', 'ss_seed',
+                        'ncpu', 'ngpu', 'N', 'W0']
         for opt in int_options:
             if opt in self.options.keys():
                 self.options[opt] = int(self.options[opt])
@@ -45,12 +61,21 @@ class options_reader(object):
         float_options = ['ss_Rmin', 'ss_Rmax', 'ss_zmin', 'ss_zmax',
                          'grid_x_size', 'grid_y_size', 'grid_z_size', 'grid_buffer', 
                          'grid_resolution',
-                         'ss_agemin_in_Gyr', 'ss_agemax_in_Gyr']
+                         'ss_agemin_in_Gyr', 'ss_agemax_in_Gyr', 'Mcluster', 'Rcluster',
+                         'softening', 'eject_cut', 'timestep', 'tend']
         for opt in float_options:
             if opt in self.options.keys():
                 self.options[opt] = float(self.options[opt])
 
+        bool_options = ['gpu_enabled']
+        for opt in bool_options:
+            if opt in self.options.keys():
+                self.options[opt] = self._convert_bool_(self.options[opt])
+
         self._convert_rbf_basis_(self.options['basis'])
+        self._convert_nbodycode_(self.options['nbodycode'])
+
+
 
         for s in ['x', 'y', 'z']:
             val = self.options['grid_'+s+'_size']
@@ -60,6 +85,14 @@ class options_reader(object):
     def set_options(self, object):
         for key in self.options.keys():
             setattr(object, key, self.options[key])
+
+    def _convert_bool_(self, string):
+        if string in ['True', 'true', '1', 1]:
+            return True
+        elif string in ['False', 'false', '0', 0]:
+            return False
+        else:
+            raise Exception("Can't recognize bool:", string, "in options file")
 
     def _read_required_option_(self, category, option):
         try:
@@ -145,6 +178,13 @@ class options_reader(object):
             self.options['basis'] = wen32
         else:
             raise Exception("Can't recognize given basis: "+basis_string)
+
+    def _convert_nbodycode_(self, code_string):
+        if code_string == 'ph4':
+            from amuse.community.ph4.interface import ph4
+            self.options['nbodycode'] = ph4
+        else:
+            raise Exception("Can't recognize given code: "+code_string)
 
 if __name__ == '__main__':
     import sys

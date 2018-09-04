@@ -1,7 +1,3 @@
-import matplotlib as mpl
-mpl.use('Agg')
-import matplotlib.pyplot as plt
-
 import numpy as np
 import gizmo_analysis as gizmo
 import utilities as ut
@@ -9,19 +5,22 @@ from scipy import interpolate
 from scipy.spatial import cKDTree
 from rbf.interpolate import RBFInterpolant
 from rbf.basis import phs3
-from oc_nbody.grid import grid
+from oceanic.grid import grid
 from amuse.units import units
-from oc_nbody.options import options_reader
+from oceanic.options import options_reader
 import pickle
-from hashlib import md5
 import time
 
+from tqdm import tqdm
+
+from joblib import Parallel, delayed
+
 class gizmo_interface(object):
-    def __init__(self, options_file):
+    def __init__(self, options_reader):
         
         self.convert_kms_Myr_to_kpc = 20000.0*np.pi / (61478577.0) # thanks wolfram alpha
-        opt = options_reader(options_file)
-        opt.set_options(self)
+        #opt = options_reader(options_file)
+        options_reader.set_options(self)
 
         self._read_snapshots_()            
         
@@ -34,7 +33,7 @@ class gizmo_interface(object):
         # set up grid
         self._init_grid_()
 
-        self.evolve_model(0 | units.Myr)w
+        self.evolve_model(0 | units.Myr)
 
     def _read_snapshots_(self):
         # read in first snapshot, get rotation matrix
@@ -165,7 +164,9 @@ class gizmo_interface(object):
         cache_name += '_z' + str(self.grid_z_size) + '_buffer' + str(self.grid_buffer)
         cache_name += '_res' + str(self.grid_resolution) + '_start'+str(self.startnum)
         cache_name += '_end'+str(self.endnum)+'_numprior'+str(self.num_prior)
-        cache_name += '_nclose'+str(self.nclose)+'_basis'+str(self.basis)+'_order'+str(self.order)
+        cache_name += '_nclose'+str(self.nclose)+'_basis'
+        cache_name += str(self.basis).replace(' ','').replace('*','').replace(':','')
+        cache_name += '_order'+str(self.order)
         return cache_name, self.cache_directory + '/' + cache_name
 
     def _init_grid_(self):
@@ -262,14 +263,22 @@ class gizmo_interface(object):
         # zlist = zlist.value_in(units.kpc)
 
         if hasattr(xlist,'__iter__'):
+            
             potlist = []
-            for x,y,z in zip(xlist,ylist,zlist):
+            for x,y,z in tqdm(zip(xlist,ylist,zlist)):
                 #rbfi = self._get_rbfi_(x,y,z)
                 rbfi = self._get_grid_rbfi_(x, y, z)
                 potlist.append( rbfi( [[x,y,z],[x,y,z]] )[0] )
             # return potlist | units.kms * units.kms
             return potlist
-        
+            """
+            def loop(x, y, z):
+                rbfi = self._get_grid_rbfi_(x, y, z)
+                return float(rbfi([[x,y,z]]))
+            potlist = Parallel(n_jobs=self.ncpu) (delayed(loop)(x, y, z) for x, y, z in tqdm(zip(xlist, ylist, zlist)))
+            return potlist
+            """
+
         else:
             #rbfi = self._get_rbfi_(xlist, ylist, zlist)
             rbfi = self._get_grid_rbfi_(x, y, z)
@@ -355,6 +364,10 @@ class gizmo_interface(object):
     def _evolve_starting_star_(self, time_in_Myr):
         self.chosen_evolved_position = [float(interpolate.splev(time_in_Myr, self.chosen_pos_interp[i])) for i in range(3)]
         self.chosen_evolved_velocity = [float(interpolate.splev(time_in_Myr, self.chosen_vel_interp[i])) for i in range(3)]
+
+        self.chosen_evolved_position = np.array(self.chosen_evolved_position)
+        self.chosen_evolved_velocity = np.array(self.chosen_evolved_velocity)
+
 
     def _get_rbfi_(self, x, y, z):
         # returns the rbfi interpolator
@@ -490,4 +503,5 @@ class gizmo_interface(object):
 if __name__ == '__main__':
     import sys
     options_file = sys.argv[1]
-    g = gizmo_interface(options_file)
+    opt = options_reader(options_file)
+    g = gizmo_interface(opt)
