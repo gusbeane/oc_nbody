@@ -8,47 +8,22 @@ should not need to be imported by the user
 """
 
 class grid(object):
-    def __init__(self, x_size_in_kpc, y_size_in_kpc, z_size_in_kpc, resolution, Rmag):
-        self.x_size_in_kpc = x_size_in_kpc
-        self.y_size_in_kpc = y_size_in_kpc
-        self.z_size_in_kpc = z_size_in_kpc
-        self.resolution = resolution
-        self.Rmag = Rmag
-        self.x_n = int(x_size_in_kpc/resolution)
-        self.y_n = int(y_size_in_kpc/resolution)
-        self.z_n = int(z_size_in_kpc/resolution)
-        
-        self.x_grid = np.linspace(-x_size_in_kpc, x_size_in_kpc, num=self.x_n)
-        self.y_grid = np.linspace(-y_size_in_kpc, y_size_in_kpc, num=self.y_n)
-        self.z_grid = np.linspace(-z_size_in_kpc, z_size_in_kpc, num=self.z_n)
-        self._gen_init_grid_()
+    def __init__(self, Rmin, Rmax, zcut, phicut, N, cyl_positions):
+        self.Rmin = Rmin
+        self.Rmax = Rmax
+        self.zcut = zcut
+        self.phicut = phicut
+        self.N = int(N)
 
-    """
-    def update_evolved_grid(self, position, velocity):
-        self.evolved_position = position
-        self.evolved_velocity = velocity
-        xpos = position[0]
-        ypos = position[1]
-        zpos = position[2]
+        cut_positions = self._make_cuts_(cyl_positions)
 
-        vec_mag = np.sqrt(xpos**2. + ypos**2.)
-        # ctheta = xpos/vec_mag
-        # stheta = ypos/vec_mag
-        ctheta = xpos/vec_mag
-        stheta = ypos/vec_mag
+        self._gen_init_grid_(cut_positions)
 
-        second_matrix = np.array([[ctheta, -stheta, 0.0],
-                                  [stheta, ctheta, 0.0],
-                                   [0.0, 0.0, 1.0]])
-
-        # self._matrix_transform_ = np.matmul(second_matrix, first_matrix)
-        self._matrix_transform_ = second_matrix
-
-        self._offset_ = self.Rmag*np.array([xpos, ypos, 0.0])/vec_mag
-
-        self.evolved_grid = np.transpose(np.tensordot(self._matrix_transform_, np.transpose(self.init_grid), axes=1))
-        self.evolved_grid = np.add(self.evolved_grid, self._offset_)
-    """
+    def _make_cuts_(self, cyl_positions):
+        rbool = np.logical_and(cyl_positions[:,0] > Rmin, cyl_positions[:,0] < Rmax)
+        zbool = np.abs(cyl_positions[:,1]) < zcut
+        keys = np.where(np.logical_and(rbool,zbool))[0]
+        return cyl_positions[keys]
 
     def update_evolved_grid(self, position, velocity):
         self.evolved_position = position

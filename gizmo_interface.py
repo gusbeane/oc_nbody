@@ -1,3 +1,5 @@
+import matplotlib; matplotlib.use('agg')
+
 import numpy as np
 import gizmo_analysis as gizmo
 import utilities as ut
@@ -268,7 +270,7 @@ class gizmo_interface(object):
             for x,y,z in tqdm(zip(xlist,ylist,zlist)):
                 #rbfi = self._get_rbfi_(x,y,z)
                 rbfi = self._get_grid_rbfi_(x, y, z)
-                potlist.append( rbfi( [[x,y,z],[x,y,z]] )[0] )
+                potlist.append( float(rbfi( [[x,y,z]] )) )
             # return potlist | units.kms * units.kms
             return potlist
             """

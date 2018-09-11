@@ -52,9 +52,9 @@ ss_agemax_in_Gyr = 1 ; max age for ss (default: 1) [Gyr]
 
 [grid]
 # see paper for explanation of x, y
-grid_x_size = 0.3   ; size of grid in "x direction" [kpc]
-grid_y_size = 0.3   ; size of grid in "y direction" [kpc]
-grid_z_size = 2.0   ; size of grid in z direction [kpc]
+grid_R_min = 5.0   ; size of grid in "x direction" [kpc]
+grid_R_max = 11.0   ; size of grid in "x direction" [kpc]
+grid_z_max = 0.5   ; size of grid in "x direction" [kpc]
+grid_phi_size = 0.2   ; size of grid in z direction [kpc]
 grid_buffer = 0.025     ; size of buffer between grid and sim for interpolation (default: 0.025) [kpc]
-grid_resolution = 0.02 ; spacing between grid points [kpc]
-
+grid_N = 75000

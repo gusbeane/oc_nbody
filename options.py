@@ -46,21 +46,22 @@ class options_reader(object):
         self._read_optional_option_('starting_star', 'ss_seed', '1776')
 
         # read in grid parameters
-        for opt in ['grid_x_size', 'grid_y_size', 'grid_z_size', 'grid_resolution']:
+        for opt in ['grid_R_min', 'grid_R_max', 'grid_z_max',
+                    'grid_phi_size', 'grid_N']:
             self._read_required_option_('grid', opt)
 
         self._read_optional_option_('grid', 'grid_buffer', '25.0')
 
         # convert relevant parameters
         int_options = ['startnum', 'endnum', 'num_prior', 'nclose', 'order', 'ss_seed',
-                        'ncpu', 'ngpu', 'N', 'W0']
+                        'ncpu', 'ngpu', 'N', 'W0', 'grid_N']
         for opt in int_options:
             if opt in self.options.keys():
                 self.options[opt] = int(self.options[opt])
 
         float_options = ['ss_Rmin', 'ss_Rmax', 'ss_zmin', 'ss_zmax',
-                         'grid_x_size', 'grid_y_size', 'grid_z_size', 'grid_buffer', 
-                         'grid_resolution',
+                         'grid_R_min', 'grid_R_max', 'grid_z_max',
+                        'grid_phi_size',
                          'ss_agemin_in_Gyr', 'ss_agemax_in_Gyr', 'Mcluster', 'Rcluster',
                          'softening', 'eject_cut', 'timestep', 'tend']
         for opt in float_options:
