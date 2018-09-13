@@ -7,8 +7,6 @@ from amuse.community.ph4.interface import ph4
 
 #import gala.potential as gp
 #import gala.dynamics as gd
-import astropy.units as u
-from astropy.table import Table
 
 from rbf.basis import phs3
 
@@ -26,8 +24,9 @@ def evolve_cluster_in_galaxy(options_file):
 
     opt = options_reader(options_file)
 
-    timestep = opt.options['timestep'] | units.Myr
-    tend = opt.options['tend'] | units.Myr
+    timestep = opt.options['timestep'] # in Myr
+    tend = opt.options['tend'] # in Myr
+    times = np.arange(0.0 , tend, timestep) | units.Myr
 
     snap_reader = snapshot_reader(opt)
 
@@ -53,9 +52,9 @@ def evolve_cluster_in_galaxy(options_file):
     system.add_system(cluster_code, (galaxy_code,))
     system.add_system(galaxy_code)
 
-    times = np.arange(0.|units.Myr, tend, timestep)
+
     for i,t in enumerate(tqdm(times)):
-        system.evolve_model(t,timestep=timestep)
+        system.evolve_model(t,timestep=timestep | units.Myr)
         cluster.clean_ejections(system)
         snap_reader.process_snapshot(system, galaxy_code, t)
 

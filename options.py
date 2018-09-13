@@ -76,12 +76,12 @@ class options_reader(object):
         self._convert_rbf_basis_(self.options['basis'])
         self._convert_nbodycode_(self.options['nbodycode'])
 
-
-
+        """
         for s in ['x', 'y', 'z']:
             val = self.options['grid_'+s+'_size']
             val += self.options['grid_buffer']
             self.options['grid_'+s+'_max'] = val
+        """
 
     def set_options(self, object):
         for key in self.options.keys():

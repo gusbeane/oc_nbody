@@ -15,42 +15,41 @@ class grid(object):
         self.phicut = phicut
         self.N = int(N)
 
-        cut_positions = self._make_cuts_(cyl_positions)
+        cut_cyl_positions = self._make_cuts_(cyl_positions)
 
-        self._gen_init_grid_(cut_positions)
+        self._gen_init_grid_(cut_cyl_positions)
 
     def _make_cuts_(self, cyl_positions):
-        rbool = np.logical_and(cyl_positions[:,0] > Rmin, cyl_positions[:,0] < Rmax)
-        zbool = np.abs(cyl_positions[:,1]) < zcut
+        rbool = np.logical_and(cyl_positions[:,0] > self.Rmin, cyl_positions[:,0] < self.Rmax)
+        zbool = np.abs(cyl_positions[:,1]) < self.zcut
         keys = np.where(np.logical_and(rbool,zbool))[0]
         return cyl_positions[keys]
 
-    def update_evolved_grid(self, position, velocity):
-        self.evolved_position = position
-        self.evolved_velocity = velocity
-        
-        xpos = position[0]
-        ypos = position[1]
-
-        vec_mag = np.sqrt(xpos**2. + ypos**2.)
-        ctheta = xpos/vec_mag
-        stheta = ypos/vec_mag
+    def update_evolved_grid(self, phi):
+        ctheta = np.cos(phi)
+        stheta = np.sin(phi)
 
         self._matrix_transform_ = np.array([[ctheta, -stheta, 0.0],
                                             [stheta, ctheta, 0.0],
-                                            [0.0, 0.0, 1.0]])
+                                            [0.0, 0.0, 1.0]]) 
 
-        self.evolved_grid = self.init_grid + np.array([0, vec_mag, 0])
-        #self.evolved_grid[:,0] += vec_mag
-        self.evolved_grid = np.transpose(np.tensordot(self._matrix_transform_, np.transpose(self.evolved_grid), axes=1))
+        self.evolved_grid = np.transpose(np.tensordot(self._matrix_transform_, np.transpose(self.init_grid), axes=1))
 
-    def _gen_init_grid_(self):
-        grid_positions = []
-        for i in range(self.x_n):
-            for j in range(self.y_n):
-                for k in range(self.z_n):
-                    grid_positions.append([self.x_grid[i], self.y_grid[j], self.z_grid[k]])
-        self.init_grid = np.ascontiguousarray(grid_positions)
+    def _gen_init_grid_(self, cut_cyl_positions):
+        nmem = len(cut_cyl_positions)
+        grid_keys = np.random.choice(range(nmem), size=self.N, replace=False)
+        init_grid = cut_cyl_positions[grid_keys]
+
+        R = init_grid[:,0]
+        z = init_grid[:,1]
+        phi = (np.random.rand(self.N) * self.phicut) - self.phicut/2.0
+
+        x = R*np.cos(phi)
+        y = R*np.sin(phi)
+
+        init_grid = np.transpose([x,y,z])
+
+        self.init_grid = np.ascontiguousarray(init_grid)
 
     def grid_point(self, i, j, k):
         xinit = self.x_grid[i]
