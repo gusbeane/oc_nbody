@@ -34,3 +34,26 @@ class snapshot_reader(object):
                  'chosen_velocity': chosen_velocity}
 
         return frame
+
+"""
+def read_first_snapshot(index, simulation_directory, ):
+
+    head = gizmo.io.Read.read_header(snapshot_value=index, simulation_directory=simulation_directory)
+    sim_name = head['simulation.name'].replace(" ","_")
+    cache_name = 'first_snapshot_'+sim_name+'_index'+str(self.startnum)+'.p'
+    cache_file = self.cache_directory + '/' + cache_name
+    try:
+        self.first_snapshot = pickle.load(open(cache_file, 'rb'))
+        print('found and loaded cached file for first_snapshot:')
+        print(cache_name)
+    except:
+        print('couldnt find cached file for first_snapshot:')
+        print(cache_name)
+        print('constructing...')
+        self.first_snapshot = gizmo.io.Read.read_snapshots(['star','gas','dark'], 'index', self.startnum, 
+                                        simulation_directory=self.simulation_directory, assign_center=False)#,
+                                        #particle_subsample_factor=20)
+        
+
+        pickle.dump(self.first_snapshot, open(cache_file, 'wb'), protocol=4)
+"""

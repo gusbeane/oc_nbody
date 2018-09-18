@@ -58,3 +58,4 @@ grid_z_max = 0.5   ; size of grid in "x direction" [kpc]
 grid_phi_size = 0.2   ; size of grid in z direction [kpc]
 grid_buffer = 0.025     ; size of buffer between grid and sim for interpolation (default: 0.025) [kpc]
 grid_N = 75000
+grid_seed = 1776       ; starting seed for grid generation, see paper for details (default: 1776)

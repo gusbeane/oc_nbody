@@ -24,6 +24,7 @@ class options_reader(object):
             self._read_required_option_('simulation', opt)
 
         self._read_optional_option_('simulation', 'num_prior', '3')
+        self._read_optional_option_('simulation', 'sim_name', None)
 
         # read in interpolation parameters
         self._read_optional_option_('interpolation', 'nclose', '150')
@@ -51,10 +52,11 @@ class options_reader(object):
             self._read_required_option_('grid', opt)
 
         self._read_optional_option_('grid', 'grid_buffer', '25.0')
+        self._read_optional_option_('grid', 'grid_seed', '1776')
 
         # convert relevant parameters
         int_options = ['startnum', 'endnum', 'num_prior', 'nclose', 'order', 'ss_seed',
-                        'ncpu', 'ngpu', 'N', 'W0', 'grid_N']
+                        'ncpu', 'ngpu', 'N', 'W0', 'grid_N', 'grid_seed']
         for opt in int_options:
             if opt in self.options.keys():
                 self.options[opt] = int(self.options[opt])

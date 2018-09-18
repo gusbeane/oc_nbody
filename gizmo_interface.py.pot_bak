@@ -17,13 +17,10 @@ from tqdm import tqdm
 
 from joblib import Parallel, delayed
 
-import sys
-
 class gizmo_interface(object):
     def __init__(self, options_reader, grid_snapshot=None):
         
         self.convert_kms_Myr_to_kpc = 20000.0*np.pi / (61478577.0) # thanks wolfram alpha
-        self.kpc_in_km = 3.08567758E16
         #opt = options_reader(options_file)
         options_reader.set_options(self)
 
@@ -48,9 +45,8 @@ class gizmo_interface(object):
         
         # just gonna take a peak into the sim and see if we have it in cache
         head = gizmo.io.Read.read_header(snapshot_value=self.startnum, simulation_directory=self.simulation_directory)
-        if self.sim_name is None:
-            self.sim_name = head['simulation.name'].replace(" ","_")
-        cache_name = 'first_snapshot_'+self.sim_name+'_index'+str(self.startnum)+'.p'
+        sim_name = head['simulation.name'].replace(" ","_")
+        cache_name = 'first_snapshot_'+sim_name+'_index'+str(self.startnum)+'.p'
         cache_file = self.cache_directory + '/' + cache_name
 
         try:
@@ -87,7 +83,7 @@ class gizmo_interface(object):
 
         init = self.snapshot_indices[0]
         fin = self.snapshot_indices[-1]
-        cache_name = 'snapshots_'+self.sim_name+'_start'+str(init)+'_end'+str(fin)+'.p'
+        cache_name = 'snapshots_'+sim_name+'_start'+str(init)+'_end'+str(fin)+'.p'
         cache_file = self.cache_directory + '/' + cache_name
 
         try:
@@ -99,7 +95,7 @@ class gizmo_interface(object):
             print(cache_name)
             print('constructing...')
             self.snapshots = gizmo.io.Read.read_snapshots(['star','gas','dark'], 'index', self.snapshot_indices, 
-                                                        properties=['position', 'velocity', 'acceleration', 'id'], 
+                                                        properties=['position', 'velocity', 'potential', 'id'], 
                                                         simulation_directory=self.simulation_directory, assign_center=False)#,
                                                         #particle_subsample_factor=20) #, properties=['position','potential'])
             pickle.dump(self.snapshots, open(cache_file, 'wb'), protocol=4)
@@ -170,7 +166,7 @@ class gizmo_interface(object):
             cache_name = 'grid_snapshot'+str(snapshot_index)+'_'
         else:
             cache_name = 'grid_'
-        cache_name += self.sim_name
+        cache_name += self.first_snapshot.info['simulation.name'].replace(' ','_')
         cache_name += '_ssid' + str(self.chosen_id)
         cache_name += '_gridseed' + str(self.grid_seed)
         cache_name += '_Rmin'+str(self.grid_R_min) + '_Rmax' + str(self.grid_R_max)
@@ -182,8 +178,6 @@ class gizmo_interface(object):
         cache_name += '_order'+str(self.order)
         return cache_name, self.cache_directory + '/' + cache_name
 
-    """
-    old potential init grid
     def _init_grid_(self, grid_snapshot=None):
         grid_cache_name, grid_cache_file = self._grid_cache_name_()
         try:
@@ -248,99 +242,7 @@ class gizmo_interface(object):
         self._init_potential_grid_interpolators_()
 
         pickle.dump(self.grid, open(grid_cache_file, 'wb'), protocol=4)
-    """
-
-    def _init_grid_(self, grid_snapshot=None):
-        grid_cache_name, grid_cache_file = self._grid_cache_name_()
-        try:
-            self.grid = pickle.load(open(grid_cache_file, 'rb'))
-            return None
-        except:
-            print('couldnt find cached grid:')
-            print(grid_cache_name)
-            print('constructing...')
-            pass
-
-        cyl_positions = np.concatenate((self.first_snapshot['star'].prop('host.distance.principal.cylindrical'), 
-            self.first_snapshot['dark'].prop('host.distance.principal.cylindrical'),
-            self.first_snapshot['gas'].prop('host.distance.principal.cylindrical')))
-
-        self.grid = grid(self.grid_R_min, self.grid_R_max, self.grid_z_max,
-                         self.grid_phi_size, self.grid_N, self.grid_seed, cyl_positions)
-        self.grid.snapshot_acceleration_x = []
-        self.grid.snapshot_acceleration_y = []
-        self.grid.snapshot_acceleration_z = []
-
-        # TODO clean up this section
-
-        # if user specified to calc a snapshot's grid, then do so, dump to cache, and quit
-        snap_indices = np.array([self.snapshots[i].snapshot['index'] for i in range(len(self.snapshots))])
-        if grid_snapshot is not None:
-            
-            snap_cache_name, snap_cache_file = self._grid_cache_name_(grid_snapshot)
-            snap_cache_file_x = snap_cache_file.replace('snapshot', 'snapshot_x')
-            snap_cache_file_y = snap_cache_file.replace('snapshot', 'snapshot_y')
-            snap_cache_file_z = snap_cache_file.replace('snapshot', 'snapshot_z')
-            
-            print('generating snapshot grid for this file:')
-            print(snap_cache_name)
-
-            key = int(np.where(grid_snapshot == snap_indices)[0])
-            position = self.chosen_snapshot_positions[key]
-            velocity = self.chosen_snapshot_velocities[key]
-            snap = self.snapshots[key]
-
-            self._ss_phi_ = np.mod(np.arctan2(position[1],position[0]), 2.*np.pi)
-            self.grid.update_evolved_grid(self._ss_phi_)
-
-            this_snapshot_grid_x, this_snapshot_grid_y, this_snapshot_grid_z = \
-                self._populate_grid_acceleration_(snap, self.grid)
-            
-            pickle.dump(this_snapshot_grid_x, open(snap_cache_file_x, 'wb'), protocol=4)
-            pickle.dump(this_snapshot_grid_y, open(snap_cache_file_y, 'wb'), protocol=4)
-            pickle.dump(this_snapshot_grid_z, open(snap_cache_file_z, 'wb'), protocol=4)
-            print('done, will quit now...')
-            sys.exit(0)
-
-        for i in range(len(self.snapshots)):
-            position = self.chosen_snapshot_positions[i]
-            velocity = self.chosen_snapshot_velocities[i]
-            snap = self.snapshots[i]
-
-            self._ss_phi_ = np.mod(np.arctan2(position[1],position[0]), 2.*np.pi)
-            self.grid.update_evolved_grid(self._ss_phi_)
-
-            try:
-                snap_cache_name, snap_cache_file = self._grid_cache_name_(snap.snapshot['index'])
-                snap_cache_file_x = snap_cache_file.replace('snapshot', 'snapshot_x')
-                snap_cache_file_y = snap_cache_file.replace('snapshot', 'snapshot_y')
-                snap_cache_file_z = snap_cache_file.replace('snapshot', 'snapshot_z')
-                
-                this_snapshot_grid_x = pickle.load(open(snap_cache_file_x, 'rb'))
-                this_snapshot_grid_y = pickle.load(open(snap_cache_file_y, 'rb'))
-                this_snapshot_grid_z = pickle.load(open(snap_cache_file_z, 'rb'))
-            except:
-                this_snapshot_grid_x, this_snapshot_grid_y, this_snapshot_grid_z = \
-                    self._populate_grid_acceleration_(snap, self.grid)
-                pickle.dump(this_snapshot_grid_x, open(snap_cache_file_x, 'wb'), protocol=4)
-                pickle.dump(this_snapshot_grid_y, open(snap_cache_file_y, 'wb'), protocol=4)
-                pickle.dump(this_snapshot_grid_z, open(snap_cache_file_z, 'wb'), protocol=4)
-
-            self.grid.snapshot_acceleration_x.append(
-                this_snapshot_grid_x)
-            self.grid.snapshot_acceleration_y.append(
-                this_snapshot_grid_y)
-            self.grid.snapshot_acceleration_z.append(
-                this_snapshot_grid_z)
-        
-        self.grid.snapshot_acceleration_x = np.array(self.grid.snapshot_acceleration_x)
-        self.grid.snapshot_acceleration_y = np.array(self.grid.snapshot_acceleration_y)
-        self.grid.snapshot_acceleration_z = np.array(self.grid.snapshot_acceleration_z)
-
-        self._init_acceleration_grid_interpolators_()
-
-        pickle.dump(self.grid, open(grid_cache_file, 'wb'), protocol=4)
-
+    
     def _populate_grid_potential_(self, snap, grid):
 
         all_positions = np.concatenate((snap['star'].prop('host.distance.principal'), 
@@ -372,49 +274,6 @@ class gizmo_interface(object):
                                 basis = self.basis, order = self.order)
         return rbfi(grid.evolved_grid)
 
-    def _populate_grid_acceleration_(self, snap, grid):
-
-        all_positions = np.concatenate((snap['star'].prop('host.distance.principal'), 
-                snap['dark'].prop('host.distance.principal'),
-                snap['gas'].prop('host.distance.principal')))
-
-        all_cyl_positions = np.concatenate((snap['star'].prop('host.distance.principal.cylindrical'), 
-                snap['dark'].prop('host.distance.principal.cylindrical'),
-                snap['gas'].prop('host.distance.principal.cylindrical')))
-        all_accelerations = np.concatenate((snap['star']['acceleration'], 
-                snap['dark']['acceleration'], snap['gas']['acceleration']))
-
-        acc_fac = snap.snapshot['scalefactor'] * self.kpc_in_km
-        acc_fac *= snap.info['hubble']
-        all_accelerations = np.divide(all_accelerations, acc_fac)
-
-        all_accelerations = ut.coordinate.get_coordinates_rotated(
-                        all_accelerations, snap.principal_axes_vectors)
-
-        Rbool = np.logical_and(all_cyl_positions[:,0] > self.grid_R_min,
-                               all_cyl_positions[:,0] < self.grid_R_max)
-        zbool = np.abs(all_cyl_positions[:,1]) < self.grid_z_max
-
-        relphi = np.subtract(all_cyl_positions[:,2],self._ss_phi_)
-        phibool = np.abs(relphi) < self.grid_phi_size/2.0
-
-        keys = np.where(np.logical_and(np.logical_and(Rbool,zbool), phibool))[0]
-        print('key length:', len(keys))
-
-        self._snapshot_relevant_positions_ = all_positions[keys]
-        self._snapshot_relevant_accelerations_ = all_accelerations[keys]
-
-        rbfi_x = RBFInterpolant(self._snapshot_relevant_positions_, 
-                                self._snapshot_relevant_accelerations_[:,0],
-                                basis = self.basis, order = self.order)
-        rbfi_y = RBFInterpolant(self._snapshot_relevant_positions_, 
-                                self._snapshot_relevant_accelerations_[:,1],
-                                basis = self.basis, order = self.order)
-        rbfi_z = RBFInterpolant(self._snapshot_relevant_positions_, 
-                                self._snapshot_relevant_accelerations_[:,2],
-                                basis = self.basis, order = self.order)
-        return rbfi_x(grid.evolved_grid), rbfi_y(grid.evolved_grid), rbfi_z(grid.evolved_grid)
-
     def _init_potential_grid_interpolators_(self):
         self.grid.grid_pot_interpolators = []
         for i in range(len(self.grid.evolved_grid)):
@@ -427,32 +286,28 @@ class gizmo_interface(object):
             self.grid.evolved_potential.append(interpolate.splev(t, self.grid.grid_pot_interpolators[i]))
         self.grid.evolved_potential = np.array(self.grid.evolved_potential)
 
-    def _init_acceleration_grid_interpolators_(self):
-        self.grid.grid_accx_interpolators = []
-        self.grid.grid_accy_interpolators = []
-        self.grid.grid_accz_interpolators = []
-        for i in range(len(self.grid.evolved_grid)):
-            self.grid.grid_accx_interpolators.append(
-                    interpolate.splrep(self.time_in_Myr, self.grid.snapshot_acceleration_x[:,i]))
-            self.grid.grid_accy_interpolators.append(
-                    interpolate.splrep(self.time_in_Myr, self.grid.snapshot_acceleration_y[:,i]))
-            self.grid.grid_accz_interpolators.append(
-                    interpolate.splrep(self.time_in_Myr, self.grid.snapshot_acceleration_z[:,i]))
+    def _execute_grid_rbfi_(self):
+        self.grid.snapshot_potential = []
+        for i in range(len(self.snapshots)):
+            self.grid.update_evolved_grid(self.chosen_snapshot_positions[i], self.chosen_snapshot_velocities[i])
 
-    def _execute_acceleration_grid_interpolators_(self, t):
-        self.grid.evolved_acceleration_x = []
-        self.grid.evolved_acceleration_y = []
-        self.grid.evolved_acceleration_z = []
-        for i in range(len(self.grid.evolved_grid)):
-            self.grid.evolved_acceleration_x.append(interpolate.splev(t, self.grid.grid_accx_interpolators[i]))
-            self.grid.evolved_acceleration_y.append(interpolate.splev(t, self.grid.grid_accy_interpolators[i]))
-            self.grid.evolved_acceleration_z.append(interpolate.splev(t, self.grid.grid_accz_interpolators[i]))
-        self.grid.evolved_acceleration_x = np.array(self.grid.evolved_acceleration_x)
-        self.grid.evolved_acceleration_y = np.array(self.grid.evolved_acceleration_y)
-        self.grid.evolved_acceleration_z = np.array(self.grid.evolved_acceleration_z)
 
-    """
-    old potential evolve_model
+
+            #self.grid.snapshot_potential.append(self.grid_rbfi[i](self.grid.evolved_grid))
+            xlist = self.grid.evolved_grid[:,0]
+            ylist = self.grid.evolved_grid[:,1]
+            zlist = self.grid.evolved_grid[:,2]
+            self.grid.snapshot_potential.append(self.get_potential_at_point(0 | units.kpc,
+                                                    xlist | units.kpc, ylist | units.kpc, zlist | units.kpc))
+        self.grid.snapshot_potential = np.array(self.grid.snapshot_potential)
+
+    def _init_potential_interpolators_(self):
+        interpolators = np.zeros(np.shape(self.potential_array)[0:2]).tolist()
+        for i in range(len(interpolators)):
+            interpolators[i] = interpolate.splrep(self.time_in_Myr, self.potential_array[i])
+            #interpolators[i] = interpolate.splrep(self.time_in_Myr, self.potential_array[i], k=1)
+        return interpolators
+
     def evolve_model(self, time, timestep=None):
 
         this_t_in_Myr = time.value_in(units.Myr)
@@ -468,22 +323,6 @@ class gizmo_interface(object):
         #self._evolved_rbfi_ = RBFInterpolant(self.grid.evolved_grid, self.grid.evolved_potential, basis=self.basis, order=self.order)
         
         print('evolved model to t (Myr):', this_t_in_Myr)
-    """
-
-    def evolve_model(self, time, timestep=None):
-
-        this_t_in_Myr = time.value_in(units.Myr)
-        self._evolve_starting_star_(this_t_in_Myr)
-
-        position = self.chosen_evolved_position
-        phi = np.mod(np.arctan2(position[1],position[0]), 2.*np.pi)
-
-        self.grid.update_evolved_grid(phi)
-        self._execute_acceleration_grid_interpolators_(this_t_in_Myr)
-        
-        self.grid._grid_evolved_kdtree_ = cKDTree(self.grid.evolved_grid)
-        
-        print('evolved model to t (Myr):', this_t_in_Myr)
 
     def _evolve_starting_star_(self, time_in_Myr):
         self.chosen_evolved_position = [float(interpolate.splev(time_in_Myr, self.chosen_pos_interp[i])) for i in range(3)]
@@ -493,26 +332,13 @@ class gizmo_interface(object):
         self.chosen_evolved_velocity = np.array(self.chosen_evolved_velocity)
 
 
-    def _get_pot_rbfi_(self, x, y, z):
+    def _get_rbfi_(self, x, y, z):
         # returns the rbfi interpolator
         # using the user defined number of points, basis, and order
         dist, ids = self.grid._grid_evolved_kdtree_.query([x,y,z], self.nclose)
         rbfi = RBFInterpolant(self.grid.evolved_grid[ids], self.grid.evolved_potential[ids], basis=self.basis, order=self.order)
         return rbfi
 
-    def _get_acc_rbfi_(self, x, y, z):
-        # returns the rbfi interpolator
-        # using the user defined number of points, basis, and order
-        dist, ids = self.grid._grid_evolved_kdtree_.query([x,y,z], self.nclose)
-        rbfi_x = RBFInterpolant(self.grid.evolved_grid[ids], self.grid.evolved_acceleration_x[ids],\
-            basis=self.basis, order=self.order)
-        rbfi_y = RBFInterpolant(self.grid.evolved_grid[ids], self.grid.evolved_acceleration_y[ids],\
-            basis=self.basis, order=self.order)
-        rbfi_z = RBFInterpolant(self.grid.evolved_grid[ids], self.grid.evolved_acceleration_z[ids],\
-            basis=self.basis, order=self.order)
-        return rbfi_x, rbfi_y, rbfi_z
-
-    """
     def get_potential_at_point(self, eps, xlist, ylist, zlist):
         # UNCOMMENT THIS WHEN IMPLEMENT AMUSE
         xlist = xlist.value_in(units.kpc)
@@ -533,8 +359,31 @@ class gizmo_interface(object):
             #rbfi = self._evolved_rbfi_
         #return rbfi([[xlist, ylist, zlist],[xlist, ylist, zlist]])[0]
         return rbfi([[xlist, ylist, zlist],[xlist, ylist, zlist]])[0] | units.kms * units.kms
-    """
 
+    """
+    def get_gravity_at_point(self, eps, xlist, ylist, zlist):
+        xlist = xlist.value_in(units.kpc)
+        ylist = ylist.value_in(units.kpc)
+        zlist = zlist.value_in(units.kpc)
+
+        rbfi = self._evolved_rbfi_
+
+        if hasattr(xlist,'__iter__'):
+            positions = np.transpose([xlist, ylist, zlist])
+            axlist = -rbfi(positions, diff=(1,0,0))
+            aylist = -rbfi(positions, diff=(0,1,0))
+            azlist = -rbfi(positions, diff=(0,0,1))
+            ax = axlist | units.kms*units.kms/units.kpc
+            ay = aylist | units.kms*units.kms/units.kpc
+            az = azlist | units.kms*units.kms/units.kpc
+            return ax, ay, az 
+        
+        else:
+            ax = -rbfi([[xlist, ylist, zlist],[xlist, ylist, zlist]], diff=(1,0,0) )[0] | units.kms*units.kms/units.kpc
+            ay = -rbfi([[xlist, ylist, zlist],[xlist, ylist, zlist]], diff=(0,1,0) )[0] | units.kms*units.kms/units.kpc
+            az = -rbfi([[xlist, ylist, zlist],[xlist, ylist, zlist]], diff=(0,0,1) )[0] | units.kms*units.kms/units.kpc
+            return ax, ay, az
+    """
     def get_gravity_at_point(self, eps, xlist, ylist, zlist):
         # UNCOMMENT THIS WHEN IMPLEMENT AMUSE
         xlist = xlist.value_in(units.kpc)
@@ -546,22 +395,22 @@ class gizmo_interface(object):
             aylist = []
             azlist = []
             for x,y,z in zip(xlist,ylist,zlist):
-                rbfi_x, rbfi_y, rbfi_z = self._get_acc_rbfi_(x,y,z)
-                axlist.append( float(rbfi_x( [[x,y,z]] )) )
-                aylist.append( float(rbfi_y( [[x,y,z]] )) )
-                azlist.append( float(rbfi_z( [[x,y,z]] )) )
+                rbfi = self._get_rbfi_(x,y,z)
+                axlist.append( -rbfi( [[x,y,z],[x,y,z]], diff=(1,0,0) )[0] )
+                aylist.append( -rbfi( [[x,y,z],[x,y,z]], diff=(0,1,0) )[0] )
+                azlist.append( -rbfi( [[x,y,z],[x,y,z]], diff=(0,0,1) )[0] )
             # UNCOMMENT THIS WHEN IMPLEMENT AMUSE
-            ax = axlist | units.kms/units.s
-            ay = aylist | units.kms/units.s
-            az = azlist | units.kms/units.s
-            return ax, ay, az
+            ax = axlist | units.kms*units.kms/units.kpc
+            ay = aylist | units.kms*units.kms/units.kpc
+            az = azlist | units.kms*units.kms/units.kpc
+            return ax, ay, az 
         
         else:
-            rbfi_x, rbfi_y, rbfi_z = self._get_acc_rbfi_(xlist, ylist, zlist)
+            rbfi = self._get_rbfi_(xlist, ylist, zlist)
             # UNCOMMENT THIS WHEN IMPLEMENT AMUSE
-            ax = float(rbfi_x([[xlist, ylist, zlist]])) | units.kms/units.s
-            ay = float(rbfi_y([[xlist, ylist, zlist]])) | units.kms/units.s
-            az = float(rbfi_z([[xlist, ylist, zlist]])) | units.kms/units.s
+            ax = -rbfi([[xlist, ylist, zlist],[xlist, ylist, zlist]], diff=(1,0,0) )[0] | units.kms*units.kms/units.kpc
+            ay = -rbfi([[xlist, ylist, zlist],[xlist, ylist, zlist]], diff=(0,1,0) )[0] | units.kms*units.kms/units.kpc
+            az = -rbfi([[xlist, ylist, zlist],[xlist, ylist, zlist]], diff=(0,0,1) )[0] | units.kms*units.kms/units.kpc
             return ax, ay, az
     
 
@@ -596,6 +445,7 @@ class gizmo_interface(object):
 
 
 if __name__ == '__main__':
+    import sys
     options_file = sys.argv[1]
     opt = options_reader(options_file)
 

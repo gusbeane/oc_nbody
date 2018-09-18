@@ -8,16 +8,17 @@ should not need to be imported by the user
 """
 
 class grid(object):
-    def __init__(self, Rmin, Rmax, zcut, phicut, N, cyl_positions):
+    def __init__(self, Rmin, Rmax, zcut, phicut, N, seed, cyl_positions):
         self.Rmin = Rmin
         self.Rmax = Rmax
         self.zcut = zcut
         self.phicut = phicut
+        self.seed = int(seed)
         self.N = int(N)
 
         cut_cyl_positions = self._make_cuts_(cyl_positions)
 
-        self._gen_init_grid_(cut_cyl_positions)
+        self._gen_init_grid_(self.seed, cut_cyl_positions)
 
     def _make_cuts_(self, cyl_positions):
         rbool = np.logical_and(cyl_positions[:,0] > self.Rmin, cyl_positions[:,0] < self.Rmax)
@@ -35,7 +36,9 @@ class grid(object):
 
         self.evolved_grid = np.transpose(np.tensordot(self._matrix_transform_, np.transpose(self.init_grid), axes=1))
 
-    def _gen_init_grid_(self, cut_cyl_positions):
+    def _gen_init_grid_(self, seed, cut_cyl_positions):
+        np.random.seed(seed)
+
         nmem = len(cut_cyl_positions)
         grid_keys = np.random.choice(range(nmem), size=self.N, replace=False)
         init_grid = cut_cyl_positions[grid_keys]
