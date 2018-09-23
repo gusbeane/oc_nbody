@@ -15,7 +15,7 @@ timestep = 0.1 ; timestep for cluster integrati
 
 [simulation]
 simulation_directory = /mnt/ceph/users/firesims/core/m12i_res7100/
-cache_directory = /mnt/ceph/users/abeane/oc_evaporation_pt1/cache
+cache_directory = /mnt/ceph/users/abeane/oc_nbody/cache/
 startnum = 580      ; first snapshot index (where the oc sim starts)
 endnum = 585        ; last snapshot index
 num_prior = 3       ; the number of snapshots loaded before the first snapshot (default: 3)
