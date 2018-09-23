@@ -7,7 +7,7 @@ from scipy import interpolate
 from scipy.spatial import cKDTree
 from rbf.interpolate import RBFInterpolant
 from rbf.basis import phs3
-from oceanic.grid import grid
+from oceanic.grid_cartesian import grid
 from amuse.units import units
 from oceanic.options import options_reader
 import pickle
