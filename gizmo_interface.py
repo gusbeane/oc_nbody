@@ -13,6 +13,9 @@ from oceanic.options import options_reader
 import pickle
 import time
 
+from amuse.lab import nbody_system, Particles
+from amuse.lab import BHTree as gravity_code
+
 from tqdm import tqdm
 
 from joblib import Parallel, delayed
@@ -26,6 +29,17 @@ class gizmo_interface(object):
         self.kpc_in_km = 3.08567758E16
         #opt = options_reader(options_file)
         options_reader.set_options(self)
+
+        # TODO wrap these into options
+        self.star_softening_in_pc = 4.0
+        self.dark_softening_in_pc = 40.0
+        self.grid_Rmax = 50.0 # kpc
+
+        self.grid_x_size_in_kpc = 0.6
+        self.grid_y_size_in_kpc = 0.6
+        self.grid_z_size_in_kpc = 0.6
+        self.grid_resolution = 0.005
+
 
         self._read_snapshots_()            
         
@@ -99,7 +113,7 @@ class gizmo_interface(object):
             print(cache_name)
             print('constructing...')
             self.snapshots = gizmo.io.Read.read_snapshots(['star','gas','dark'], 'index', self.snapshot_indices, 
-                                                        properties=['position', 'velocity', 'acceleration', 'id'], 
+                                                        properties=['position', 'velocity', 'id', 'mass', 'smooth.length'], 
                                                         simulation_directory=self.simulation_directory, assign_center=False)#,
                                                         #particle_subsample_factor=20) #, properties=['position','potential'])
             pickle.dump(self.snapshots, open(cache_file, 'wb'), protocol=4)
@@ -191,8 +205,12 @@ class gizmo_interface(object):
             self.first_snapshot['dark'].prop('host.distance.principal.cylindrical'),
             self.first_snapshot['gas'].prop('host.distance.principal.cylindrical')))
 
-        self.grid = grid(self.grid_R_min, self.grid_R_max, self.grid_z_max,
-                         self.grid_phi_size, self.grid_N, self.grid_seed, cyl_positions)
+        #self.grid = grid(self.grid_R_min, self.grid_R_max, self.grid_z_max,
+        #                 self.grid_phi_size, self.grid_N, self.grid_seed, cyl_positions)
+        # old API
+        self.grid = grid(self.grid_x_size_in_kpc, self.grid_y_size_in_kpc, self.grid_z_size_in_kpc,
+                            self.grid_resolution)
+
         self.grid.snapshot_acceleration_x = []
         self.grid.snapshot_acceleration_y = []
         self.grid.snapshot_acceleration_z = []
@@ -216,8 +234,7 @@ class gizmo_interface(object):
             velocity = self.chosen_snapshot_velocities[key]
             snap = self.snapshots[key]
 
-            self._ss_phi_ = np.mod(np.arctan2(position[1],position[0]), 2.*np.pi)
-            self.grid.gen_evolved_grid(self._ss_phi_)
+            self.grid.gen_evolved_grid(position)
 
             this_snapshot_grid_x, this_snapshot_grid_y, this_snapshot_grid_z = \
                 self._populate_grid_acceleration_(snap, self.grid)
@@ -233,8 +250,7 @@ class gizmo_interface(object):
             velocity = self.chosen_snapshot_velocities[i]
             snap = self.snapshots[i]
 
-            self._ss_phi_ = np.mod(np.arctan2(position[1],position[0]), 2.*np.pi)
-            self.grid.update_evolved_grid(self._ss_phi_)
+            self.grid.gen_evolved_grid(position)
 
             try:
                 snap_cache_name, snap_cache_file = self._grid_cache_name_(snap.snapshot['index'])
@@ -269,46 +285,51 @@ class gizmo_interface(object):
 
     def _populate_grid_acceleration_(self, snap, grid):
 
-        all_positions = np.concatenate((snap['star'].prop('host.distance.principal'), 
+        # gather all necessary parameters
+        all_position = np.concatenate((snap['star'].prop('host.distance.principal'), 
                 snap['dark'].prop('host.distance.principal'),
                 snap['gas'].prop('host.distance.principal')))
 
-        all_cyl_positions = np.concatenate((snap['star'].prop('host.distance.principal.cylindrical'), 
-                snap['dark'].prop('host.distance.principal.cylindrical'),
-                snap['gas'].prop('host.distance.principal.cylindrical')))
-        all_accelerations = np.concatenate((snap['star']['acceleration'], 
-                snap['dark']['acceleration'], snap['gas']['acceleration']))
+        all_velocity = np.concatenate((snap['star'].prop('host.velocity.principal'), 
+                snap['dark'].prop('host.velocity.principal'),
+                snap['gas'].prop('host.velocity.principal')))
 
-        acc_fac = snap.snapshot['scalefactor'] * self.kpc_in_km
-        acc_fac *= snap.info['hubble']
-        all_accelerations = np.divide(all_accelerations, acc_fac)
+        all_mass = np.concatenate((snap['star']['mass'], 
+                snap['dark']['mass'],
+                snap['gas']['mass']))
 
-        all_accelerations = ut.coordinate.get_coordinates_rotated(
-                        all_accelerations, snap.principal_axes_vectors)
+        gas_softening = snap['gas']['smooth.length'] / 1000.0
+        star_softening = np.full(len(snap['star']['position']), self.star_softening_in_pc/1000.0)
+        dark_softening = np.full(len(snap['dark']['position']), self.dark_softening_in_pc/1000.0)
 
-        Rbool = np.logical_and(all_cyl_positions[:,0] > self.grid_R_min,
-                               all_cyl_positions[:,0] < self.grid_R_max)
-        zbool = np.abs(all_cyl_positions[:,1]) < self.grid_z_max
+        all_softening = np.concatenate((star_softening, dark_softening, gas_softening))
 
-        relphi = np.subtract(all_cyl_positions[:,2],self._ss_phi_)
-        phibool = np.abs(relphi) < self.grid_phi_size/2.0
+        converter = nbody_system.nbody_to_si(1 | units.MSun, 1 | units.kpc)
+        gravity = gravity_code(converter, number_of_workers=self.ncpu)
 
-        keys = np.where(np.logical_and(np.logical_and(Rbool,zbool), phibool))[0]
-        print('key length:', len(keys))
+        # figure out which particles to exclude
+        rmag = np.linalg.norm(all_position, axis=1)
+        keys = np.where(rmag < self.grid_Rmax)[0]
 
-        self._snapshot_relevant_positions_ = all_positions[keys]
-        self._snapshot_relevant_accelerations_ = all_accelerations[keys]
+        particles = Particles(len(keys))
+        particles.position = all_position[keys] | units.kpc
+        particles.velocity = all_velocity[keys] | units.kms
+        particles.mass = all_mass[keys] | units.MSun
+        particles.smoothing_length_squared = (all_softening[keys] | units.kpc) ** 2.0
 
-        rbfi_x = RBFInterpolant(self._snapshot_relevant_positions_, 
-                                self._snapshot_relevant_accelerations_[:,0],
-                                basis = self.basis, order = self.order)
-        rbfi_y = RBFInterpolant(self._snapshot_relevant_positions_, 
-                                self._snapshot_relevant_accelerations_[:,1],
-                                basis = self.basis, order = self.order)
-        rbfi_z = RBFInterpolant(self._snapshot_relevant_positions_, 
-                                self._snapshot_relevant_accelerations_[:,2],
-                                basis = self.basis, order = self.order)
-        return rbfi_x(grid.evolved_grid), rbfi_y(grid.evolved_grid), rbfi_z(grid.evolved_grid)
+        gravity.particles.add_particles(particles)
+
+        acc = gravity.get_gravity_at_point(0 | units.kpc, grid.evolved_grid[:,0] | units.kpc, grid.evolved_grid[:,1] | units.kpc, grid.evolved_grid[:,2] | units.kpc)
+        acc = np.array([acc[i].value_in(units.kms/units.Myr) for i in range(len(acc))])
+
+        ss_acc = gravity.get_gravity_at_point(0 | units.kpc, grid.ss_evolved_position[0] | units.kpc, grid.ss_evolved_position[1] | units.kpc,
+                                                grid.ss_evolved_position[2] | units.kpc)
+        ss_acc = np.array([ss_acc[i].value_in(units.kms/units.Myr) for i in range(len(acc))])
+
+        for i in range(len(acc)):
+            acc[i] = np.subtract(acc[i], ss_acc[i])
+
+        return acc[0], acc[1], acc[2]
 
     def _init_potential_grid_interpolators_(self):
         self.grid.grid_pot_interpolators = []

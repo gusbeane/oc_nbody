@@ -12,13 +12,12 @@ TODO:
 """
 
 class grid(object):
-    def __init__(self, x_size_in_kpc, y_size_in_kpc, z_size_in_kpc, resolution, Rmag):
+    def __init__(self, x_size_in_kpc, y_size_in_kpc, z_size_in_kpc, resolution):
         # store parameters for future convenience
         self.x_size_in_kpc = x_size_in_kpc
         self.y_size_in_kpc = y_size_in_kpc
         self.z_size_in_kpc = z_size_in_kpc
         self.resolution = resolution
-        self.Rmag = Rmag
 
         # convert resolution to number of grid points needed
         self.x_n = int(x_size_in_kpc/resolution)
@@ -31,6 +30,7 @@ class grid(object):
         self._gen_init_grid_()
 
     def gen_evolved_grid(self, position):
+        self.ss_evolved_position = position
         self.evolved_grid = np.add(self.init_grid, position)
 
     def _gen_init_grid_(self):
