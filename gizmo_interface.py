@@ -149,14 +149,8 @@ class gizmo_interface(object):
         self.chosen_snapshot_positions = np.array(self.chosen_snapshot_positions)
         self.chosen_snapshot_velocities = np.array(self.chosen_snapshot_velocities)
 
-        self._set_ss_Rguess_(self.chosen_snapshot_positions)
-
         self.chosen_pos_interp = self._gen_pos_or_vel_interpolator_(self.chosen_snapshot_positions)
         self.chosen_vel_interp = self._gen_pos_or_vel_interpolator_(self.chosen_snapshot_velocities)
-
-    def _set_ss_Rguess_(self, snap_positions):
-        Rlist = np.sqrt(snap_positions[:,0]**2. + snap_positions[:,1]**2.)
-        self.ss_Rguess = np.mean(Rlist)
 
     def _gen_pos_or_vel_interpolator_(self, pos_or_vel):
         interpolators = np.zeros(3).tolist()
@@ -181,74 +175,6 @@ class gizmo_interface(object):
         cache_name += str(self.basis).replace(' ','').replace('*','').replace(':','')
         cache_name += '_order'+str(self.order)
         return cache_name, self.cache_directory + '/' + cache_name
-
-    """
-    old potential init grid
-    def _init_grid_(self, grid_snapshot=None):
-        grid_cache_name, grid_cache_file = self._grid_cache_name_()
-        try:
-            self.grid = pickle.load(open(cache_file, 'rb'))
-            return None
-        except:
-            print('couldnt find cached grid:')
-            print(grid_cache_name)
-            print('constructing...')
-            pass
-
-        cyl_positions = np.concatenate((self.first_snapshot['star'].prop('host.distance.principal.cylindrical'), 
-            self.first_snapshot['dark'].prop('host.distance.principal.cylindrical'),
-            self.first_snapshot['gas'].prop('host.distance.principal.cylindrical')))
-
-        self.grid = grid(self.grid_R_min, self.grid_R_max, self.grid_z_max,
-                         self.grid_phi_size, self.grid_N, self.grid_seed, cyl_positions)
-        self.grid.snapshot_potential = []
-
-        # TODO clean up this section
-
-        # if user specified to calc a snapshot's grid, then do so, dump to cache, and quit
-        snap_indices = np.array([self.snapshots[i].snapshot['index'] for i in range(len(self.snapshots))])
-        if grid_snapshot is not None:
-            snap_cache_name, snap_cache_file = self._grid_cache_name_(grid_snapshot)
-            print('generating snapshot grid for this file:')
-            print(snap_cache_name)
-
-            key = int(np.where(grid_snapshot == snap_indices)[0])
-            position = self.chosen_snapshot_positions[key]
-            velocity = self.chosen_snapshot_velocities[key]
-            snap = self.snapshots[key]
-
-            self._ss_phi_ = np.mod(np.arctan2(position[1],position[0]), 2.*np.pi)
-            self.grid.update_evolved_grid(self._ss_phi_)
-
-            this_snapshot_grid = self._populate_grid_potential_(snap, self.grid)
-            pickle.dump(this_snapshot_grid, open(snap_cache_file, 'wb'), protocol=4)
-            print('done, will quit now...')
-            quit()
-
-        for i in range(len(self.snapshots)):
-            position = self.chosen_snapshot_positions[i]
-            velocity = self.chosen_snapshot_velocities[i]
-            snap = self.snapshots[i]
-
-            self._ss_phi_ = np.mod(np.arctan2(position[1],position[0]), 2.*np.pi)
-            self.grid.update_evolved_grid(self._ss_phi_)
-
-            try:
-                snap_cache_name, snap_cache_file = self._grid_cache_name_(snap.snapshot['index'])
-                this_snapshot_grid = pickle.load(open(snap_cache_file, 'rb'))
-            except:
-                this_snapshot_grid = self._populate_grid_potential_(snap, self.grid)
-                pickle.dump(this_snapshot_grid, open(snap_cache_file, 'wb'), protocol=4)
-
-            self.grid.snapshot_potential.append(
-                self._populate_grid_potential_(snap, self.grid))
-        
-        self.grid.snapshot_potential = np.array(self.grid.snapshot_potential)
-
-        self._init_potential_grid_interpolators_()
-
-        pickle.dump(self.grid, open(grid_cache_file, 'wb'), protocol=4)
-    """
 
     def _init_grid_(self, grid_snapshot=None):
         grid_cache_name, grid_cache_file = self._grid_cache_name_()
@@ -291,7 +217,7 @@ class gizmo_interface(object):
             snap = self.snapshots[key]
 
             self._ss_phi_ = np.mod(np.arctan2(position[1],position[0]), 2.*np.pi)
-            self.grid.update_evolved_grid(self._ss_phi_)
+            self.grid.gen_evolved_grid(self._ss_phi_)
 
             this_snapshot_grid_x, this_snapshot_grid_y, this_snapshot_grid_z = \
                 self._populate_grid_acceleration_(snap, self.grid)
@@ -340,37 +266,6 @@ class gizmo_interface(object):
         self._init_acceleration_grid_interpolators_()
 
         pickle.dump(self.grid, open(grid_cache_file, 'wb'), protocol=4)
-
-    def _populate_grid_potential_(self, snap, grid):
-
-        all_positions = np.concatenate((snap['star'].prop('host.distance.principal'), 
-                snap['dark'].prop('host.distance.principal'),
-                snap['gas'].prop('host.distance.principal')))
-
-        all_cyl_positions = np.concatenate((snap['star'].prop('host.distance.principal.cylindrical'), 
-                snap['dark'].prop('host.distance.principal.cylindrical'),
-                snap['gas'].prop('host.distance.principal.cylindrical')))
-        all_potentials = np.concatenate((snap['star']['potential'], 
-                snap['dark']['potential'], snap['gas']['potential']))
-
-        all_potentials /= snap.snapshot['scalefactor']**2.0
-
-        Rbool = np.logical_and(all_cyl_positions[:,0] > self.grid_R_min,
-                               all_cyl_positions[:,0] < self.grid_R_max)
-        zbool = np.abs(all_cyl_positions[:,1]) < self.grid_z_max
-
-        relphi = np.subtract(all_cyl_positions[:,2],self._ss_phi_)
-        phibool = np.abs(relphi) < self.grid_phi_size/2.0
-
-        keys = np.where(np.logical_and(np.logical_and(Rbool,zbool), phibool))[0]
-        print('key length:', len(keys))
-
-        self._snapshot_relevant_positions_ = all_positions[keys]
-        self._snapshot_relevant_potentials_ = all_potentials[keys]
-
-        rbfi = RBFInterpolant(self._snapshot_relevant_positions_, self._snapshot_relevant_potentials_,
-                                basis = self.basis, order = self.order)
-        return rbfi(grid.evolved_grid)
 
     def _populate_grid_acceleration_(self, snap, grid):
 
