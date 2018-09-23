@@ -38,12 +38,12 @@ def evolve_cluster_in_galaxy(options_file):
     starpos = galaxy_code.chosen_position_z0
     starvel = galaxy_code.chosen_velocity_z0
     
-    stars.x += starpos[0] | units.kpc
-    stars.y += starpos[1] | units.kpc
-    stars.z += starpos[2] | units.kpc
-    stars.vx = starvel[0] | units.kms
-    stars.vy = starvel[1] | units.kms
-    stars.vz = starvel[2] | units.kms
+    #stars.x += starpos[0] | units.kpc
+    #stars.y += starpos[1] | units.kpc
+    #stars.z += starpos[2] | units.kpc
+    #stars.vx = starvel[0] | units.kms
+    #stars.vy = starvel[1] | units.kms
+    #stars.vz = starvel[2] | units.kms
     
     channel = stars.new_channel_to(cluster_code.particles)
     channel.copy_attributes(["x","y","z","vx","vy","vz"])
