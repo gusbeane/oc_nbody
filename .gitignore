@@ -1,4 +1,7 @@
 *.pyc
 __pycache__/
 cache/
+notebooks/
 test/
+test_5k/
+update.sh
