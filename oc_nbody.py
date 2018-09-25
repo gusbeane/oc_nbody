@@ -35,8 +35,8 @@ def evolve_cluster_in_galaxy(options_file):
     galaxy_code = gizmo_interface(opt)
 
     stars = cluster_code.particles.copy()
-    starpos = galaxy_code.chosen_position_z0
-    starvel = galaxy_code.chosen_velocity_z0
+    # starpos = galaxy_code.chosen_position_z0
+    # starvel = galaxy_code.chosen_velocity_z0
     
     #stars.x += starpos[0] | units.kpc
     #stars.y += starpos[1] | units.kpc
