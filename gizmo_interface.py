@@ -454,7 +454,8 @@ class gizmo_interface(object):
     
 
     def _init_starting_star_(self):
-        self.chosen_position_z0, self.chosen_velocity_z0, self.chosen_index_z0, self.chosen_id = self.starting_star(
+        # self.chosen_position_z0, self.chosen_velocity_z0, self.chosen_index_z0, self.chosen_id = self.starting_star(
+        self.chosen_position_z0, self.chosen_index_z0, self.chosen_id = self.starting_star(
                             self.ss_Rmin, self.ss_Rmax, self.ss_zmin, self.ss_zmax,
                             self.ss_agemin_in_Gyr, self.ss_agemax_in_Gyr, self.ss_seed)
 
@@ -480,7 +481,8 @@ class gizmo_interface(object):
 
         chosen_one = np.random.choice(keys)
         chosen_id = self.first_snapshot['star']['id'][chosen_one]
-        return pos[chosen_one], vel[chosen_one], chosen_one, chosen_id
+        # return pos[chosen_one], vel[chosen_one], chosen_one, chosen_id
+        return pos[chosen_one], chosen_one, chosen_id
 
 
 if __name__ == '__main__':
