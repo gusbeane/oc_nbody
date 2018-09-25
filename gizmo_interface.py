@@ -173,7 +173,7 @@ class gizmo_interface(object):
         self.chosen_snapshot_positions = [self.snapshots[i]['star'].prop('host.distance.principal')\
                     [self.chosen_indices[i]] for i in range(len(self.snapshots))]
         # self.chosen_snapshot_velocities = [self.snapshots[i]['star'].prop('host.velocity.principal')\
-                    [self.chosen_indices[i]] for i in range(len(self.snapshots))]
+                    # [self.chosen_indices[i]] for i in range(len(self.snapshots))]
 
         self.chosen_indices = np.array(self.chosen_indices)
         self.chosen_snapshot_positions = np.array(self.chosen_snapshot_positions)
