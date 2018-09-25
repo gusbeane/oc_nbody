@@ -20,19 +20,26 @@ from tqdm import tqdm
 
 from joblib import Parallel, delayed
 
+from pykdgrav import ConstructKDTree, GetAccelParallel
+from astropy.constants import G as G_astropy
+import astropy.units as u
+
 import sys
 
 class gizmo_interface(object):
     def __init__(self, options_reader, grid_snapshot=None):
         
+        self.G = G_astropy.to_value(u.kpc**2 * u.km / (u.s * u.Myr * u.Msun))
+        self.theta = 0.5
+
         self.convert_kms_Myr_to_kpc = 20000.0*np.pi / (61478577.0) # thanks wolfram alpha
         self.kpc_in_km = 3.08567758E16
         #opt = options_reader(options_file)
         options_reader.set_options(self)
 
         # TODO wrap these into options
-        self.star_softening_in_pc = 4.0
-        self.dark_softening_in_pc = 40.0
+        self.star_softening_in_pc = 2.8 * 4.0
+        self.dark_softening_in_pc = 2.8 * 40.0
         self.grid_Rmax = 50.0 # kpc
 
         self.grid_x_size_in_kpc = 0.6
@@ -294,52 +301,50 @@ class gizmo_interface(object):
 
     def _populate_grid_acceleration_(self, snap, grid):
 
+        # first exclude starting star
+        ss_key = np.where(snap['star']['id'] != self.chosen_id)[0]
+
         # gather all necessary parameters
-        all_position = np.concatenate((snap['star'].prop('host.distance.principal'), 
+        all_position = np.concatenate((snap['star'].prop('host.distance.principal')[ss_key], 
                 snap['dark'].prop('host.distance.principal'),
                 snap['gas'].prop('host.distance.principal')))
 
-        all_velocity = np.concatenate((snap['star'].prop('host.velocity.principal'), 
-                snap['dark'].prop('host.velocity.principal'),
-                snap['gas'].prop('host.velocity.principal')))
+        # all_velocity = np.concatenate((snap['star'].prop('host.velocity.principal')[ss_key], 
+        #         snap['dark'].prop('host.velocity.principal'),
+        #         snap['gas'].prop('host.velocity.principal')))
 
-        all_mass = np.concatenate((snap['star']['mass'], 
+        all_mass = np.concatenate((snap['star']['mass'][ss_key], 
                 snap['dark']['mass'],
                 snap['gas']['mass']))
 
-        gas_softening = snap['gas']['smooth.length'] / 1000.0
-        star_softening = np.full(len(snap['star']['position']), self.star_softening_in_pc/1000.0)
+        gas_softening = 2.8 * snap['gas']['smooth.length'] / 1000.0
+        star_softening = np.full(len(snap['star']['position']), self.star_softening_in_pc/1000.0)[ss_key]
         dark_softening = np.full(len(snap['dark']['position']), self.dark_softening_in_pc/1000.0)
 
         all_softening = np.concatenate((star_softening, dark_softening, gas_softening))
-
-        converter = nbody_system.nbody_to_si(1 | units.MSun, 1 | units.kpc)
-        gravity = gravity_code(converter, number_of_workers=self.ncpu)
 
         # figure out which particles to exclude
         rmag = np.linalg.norm(all_position, axis=1)
         keys = np.where(rmag < self.grid_Rmax)[0]
 
-        particles = Particles(len(keys))
-        particles.position = all_position[keys] | units.kpc
-        particles.velocity = all_velocity[keys] | units.kms
-        particles.mass = all_mass[keys] | units.MSun
-        particles.smoothing_length_squared = (all_softening[keys] | units.kpc) ** 2.0
+        r = all_position[keys]
+        m = all_mass[keys]
+        soft = all_softening[keys]
 
-        gravity.particles.add_particles(particles)
+        print('constructing tree for gravity calculation')
+        tree = ConstructKDTree( np.float64(r), np.float64(m), np.float64(soft))
+        
+        print('tree calculated, now evaluating')
+        accel = GetAccelParallel(grid.evolved_grid, tree, self.G, self.theta)
+        #TODO make this step less hacky
+        accel_center = GetAccelParallel(np.array([grid.ss_evolved_position]), tree, self.G, self.theta)[0]
 
-        acc = gravity.get_gravity_at_point(0 | units.kpc, grid.evolved_grid[:,0] | units.kpc, 
-                                        grid.evolved_grid[:,1] | units.kpc, grid.evolved_grid[:,2] | units.kpc)
-        acc = np.array([acc[i].value_in(units.kms/units.Myr) for i in range(len(acc))])
+        # remove total acceleration of frame, which we are NOT trying to capture
+        accel[:,0] = np.subtract(accel[:,0], accel_center[0])
+        accel[:,1] = np.subtract(accel[:,1], accel_center[1])
+        accel[:,2] = np.subtract(accel[:,2], accel_center[2])
 
-        ss_acc = gravity.get_gravity_at_point(0 | units.kpc, grid.ss_evolved_position[0] | units.kpc, grid.ss_evolved_position[1] | units.kpc,
-                                                grid.ss_evolved_position[2] | units.kpc)
-        ss_acc = np.array([ss_acc[i].value_in(units.kms/units.Myr) for i in range(len(acc))])
-
-        for i in range(len(acc)):
-            acc[i] = np.subtract(acc[i], ss_acc[i])
-
-        return acc[0], acc[1], acc[2]
+        return accel[:,0], accel[:,1], accel[:,2]
 
     def _init_potential_grid_interpolators_(self):
         self.grid.grid_pot_interpolators = []
