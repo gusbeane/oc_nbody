@@ -172,15 +172,15 @@ class gizmo_interface(object):
         self.chosen_indices = [int(np.where(self.snapshots[i]['star']['id'] == self.chosen_id)[0]) for i in range(len(self.snapshots)) ]
         self.chosen_snapshot_positions = [self.snapshots[i]['star'].prop('host.distance.principal')\
                     [self.chosen_indices[i]] for i in range(len(self.snapshots))]
-        self.chosen_snapshot_velocities = [self.snapshots[i]['star'].prop('host.velocity.principal')\
+        # self.chosen_snapshot_velocities = [self.snapshots[i]['star'].prop('host.velocity.principal')\
                     [self.chosen_indices[i]] for i in range(len(self.snapshots))]
 
         self.chosen_indices = np.array(self.chosen_indices)
         self.chosen_snapshot_positions = np.array(self.chosen_snapshot_positions)
-        self.chosen_snapshot_velocities = np.array(self.chosen_snapshot_velocities)
+        # self.chosen_snapshot_velocities = np.array(self.chosen_snapshot_velocities)
 
         self.chosen_pos_interp = self._gen_pos_or_vel_interpolator_(self.chosen_snapshot_positions)
-        self.chosen_vel_interp = self._gen_pos_or_vel_interpolator_(self.chosen_snapshot_velocities)
+        # self.chosen_vel_interp = self._gen_pos_or_vel_interpolator_(self.chosen_snapshot_velocities)
 
     def _gen_pos_or_vel_interpolator_(self, pos_or_vel):
         interpolators = np.zeros(3).tolist()
@@ -247,7 +247,7 @@ class gizmo_interface(object):
 
             key = int(np.where(grid_snapshot == snap_indices)[0])
             position = self.chosen_snapshot_positions[key]
-            velocity = self.chosen_snapshot_velocities[key]
+            # velocity = self.chosen_snapshot_velocities[key]
             snap = self.snapshots[key]
 
             self.grid.gen_evolved_grid(position)
@@ -263,7 +263,7 @@ class gizmo_interface(object):
 
         for i in range(len(self.snapshots)):
             position = self.chosen_snapshot_positions[i]
-            velocity = self.chosen_snapshot_velocities[i]
+            # velocity = self.chosen_snapshot_velocities[i]
             snap = self.snapshots[i]
 
             self.grid.gen_evolved_grid(position)
@@ -398,10 +398,10 @@ class gizmo_interface(object):
 
     def _evolve_starting_star_(self, time_in_Myr):
         self.chosen_evolved_position = [float(interpolate.splev(time_in_Myr, self.chosen_pos_interp[i])) for i in range(3)]
-        self.chosen_evolved_velocity = [float(interpolate.splev(time_in_Myr, self.chosen_vel_interp[i])) for i in range(3)]
+        # self.chosen_evolved_velocity = [float(interpolate.splev(time_in_Myr, self.chosen_vel_interp[i])) for i in range(3)]
 
         self.chosen_evolved_position = np.array(self.chosen_evolved_position)
-        self.chosen_evolved_velocity = np.array(self.chosen_evolved_velocity)
+        # self.chosen_evolved_velocity = np.array(self.chosen_evolved_velocity)
 
 
     def _get_pot_rbfi_(self, x, y, z):
@@ -466,7 +466,7 @@ class gizmo_interface(object):
         
         starages = self.first_snapshot['star'].prop('age')
         pos = self.first_snapshot['star'].prop('host.distance.principal')
-        vel = self.first_snapshot['star'].prop('host.velocity.principal')
+        # vel = self.first_snapshot['star'].prop('host.velocity.principal')
 
         Rstar = np.sqrt(pos[:,0]*pos[:,0] + pos[:,1]*pos[:,1])
         zstar = pos[:,2]
