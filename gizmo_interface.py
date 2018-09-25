@@ -120,7 +120,7 @@ class gizmo_interface(object):
             print(cache_name)
             print('constructing...')
             self.snapshots = gizmo.io.Read.read_snapshots(['star','gas','dark'], 'index', self.snapshot_indices, 
-                                                        properties=['position', 'velocity', 'id', 'mass', 'smooth.length'], 
+                                                        properties=['position', 'id', 'mass', 'smooth.length'], 
                                                         simulation_directory=self.simulation_directory, assign_center=False)#,
                                                         #particle_subsample_factor=20) #, properties=['position','potential'])
             
