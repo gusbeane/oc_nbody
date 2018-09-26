@@ -10,7 +10,7 @@ class options_reader(object):
             raise Exception('Cant read the provided options file:' + file)
 
         self.options = {}
-        
+
         # read in general parameters
         for opt in ['output_directory']:
             self._read_required_option_('general', opt)
@@ -20,19 +20,26 @@ class options_reader(object):
         self._read_optional_option_('general', 'ngpu', '1')
 
         # read in simulation parameters
-        for opt in ['simulation_directory', 'cache_directory', 'startnum', 'endnum']:
+        for opt in ['simulation_directory', 'cache_directory', 'startnum',
+                    'endnum',
+                    'star_softening_in_pc', 'dark_softening_in_pc']:
             self._read_required_option_('simulation', opt)
 
         self._read_optional_option_('simulation', 'num_prior', '3')
         self._read_optional_option_('simulation', 'sim_name', None)
 
-        # read in interpolation parameters
-        self._read_optional_option_('interpolation', 'nclose', '150')
-        self._read_optional_option_('interpolation', 'basis', 'phs3')
-        self._read_optional_option_('interpolation', 'order', '5')
+        # read in force_calculation parameters
+        for opt in ['Rmax', 'theta']:
+            self._read_required_option_('force_calculation', opt)
+
+        self._read_optional_option_('force_calculation', 'nclose', '150')
+        self._read_optional_option_('force_calculation', 'basis', 'phs3')
+        self._read_optional_option_('force_calculation', 'order', '5')
+        self._read_optional_option_('force_calculation', 'eps', '1.0')
 
         # read in cluster parameters
-        for opt in ['N', 'W0', 'Mcluster', 'Rcluster', 'softening', 'nbodycode',
+        for opt in ['N', 'W0', 'Mcluster', 'Rcluster', 'softening',
+                    'nbodycode',
                     'timestep', 'tend']:
             self._read_required_option_('cluster', opt)
 
@@ -47,25 +54,28 @@ class options_reader(object):
         self._read_optional_option_('starting_star', 'ss_seed', '1776')
 
         # read in grid parameters
-        for opt in ['grid_R_min', 'grid_R_max', 'grid_z_max',
-                    'grid_phi_size', 'grid_N']:
+        for opt in ['grid_x_size_in_kpc', 'grid_y_size_in_kpc',
+                    'grid_z_size_in_kpc', 'grid_resolution']:
             self._read_required_option_('grid', opt)
 
-        self._read_optional_option_('grid', 'grid_buffer', '25.0')
         self._read_optional_option_('grid', 'grid_seed', '1776')
 
         # convert relevant parameters
-        int_options = ['startnum', 'endnum', 'num_prior', 'nclose', 'order', 'ss_seed',
-                        'ncpu', 'ngpu', 'N', 'W0', 'grid_N', 'grid_seed']
+        int_options = ['startnum', 'endnum', 'num_prior', 'nclose', 'order',
+                        'ss_seed',
+                        'ncpu', 'ngpu', 'N', 'W0', 'grid_seed']
         for opt in int_options:
             if opt in self.options.keys():
                 self.options[opt] = int(self.options[opt])
 
         float_options = ['ss_Rmin', 'ss_Rmax', 'ss_zmin', 'ss_zmax',
-                         'grid_R_min', 'grid_R_max', 'grid_z_max',
-                        'grid_phi_size',
-                         'ss_agemin_in_Gyr', 'ss_agemax_in_Gyr', 'Mcluster', 'Rcluster',
-                         'softening', 'eject_cut', 'timestep', 'tend']
+                         'ss_agemin_in_Gyr', 'ss_agemax_in_Gyr', 'Mcluster',
+                         'Rcluster',
+                         'softening', 'eject_cut', 'timestep', 'tend', 'eps'
+                         'star_softening_in_pc', 'dark_softening_in_pc',
+                         'Rmax', 'theta',
+                         'grid_x_size_in_kpc', 'grid_y_size_in_kpc',
+                         'grid_z_size_in_kpc', 'grid_resolution']
         for opt in float_options:
             if opt in self.options.keys():
                 self.options[opt] = float(self.options[opt])
@@ -116,67 +126,67 @@ class options_reader(object):
         if basis_string == 'phs8':
             from rbf.basis import phs8
             self.options['basis'] = phs8
-        elif basis_string =='phs7':
+        elif basis_string == 'phs7':
             from rbf.basis import phs7
             self.options['basis'] = phs7
-        elif basis_string =='phs6':
+        elif basis_string == 'phs6':
             from rbf.basis import phs6
             self.options['basis'] = phs6
-        elif basis_string =='phs5':
+        elif basis_string == 'phs5':
             from rbf.basis import phs5
             self.options['basis'] = phs5
-        elif basis_string =='phs4':
+        elif basis_string == 'phs4':
             from rbf.basis import phs4
             self.options['basis'] = phs4
-        elif basis_string =='phs3':
+        elif basis_string == 'phs3':
             from rbf.basis import phs3
             self.options['basis'] = phs3
-        elif basis_string =='phs2':
+        elif basis_string == 'phs2':
             from rbf.basis import phs2
             self.options['basis'] = phs2
-        elif basis_string =='phs1':
+        elif basis_string == 'phs1':
             from rbf.basis import phs1
             self.options['basis'] = phs1
         elif basis_string == 'mq':
             from rbf.basis import mq
             self.options['basis'] = mq
-        elif basis_string =='imq':
+        elif basis_string == 'imq':
             from rbf.basis import imq
             self.options['basis'] = imq
-        elif basis_string =='iq':
+        elif basis_string == 'iq':
             from rbf.basis import iq
             self.options['basis'] = iq
-        elif basis_string =='ga':
+        elif basis_string == 'ga':
             from rbf.basis import ga
             self.options['basis'] = ga
-        elif basis_string =='exp':
+        elif basis_string == 'exp':
             from rbf.basis import exp
             self.options['basis'] = exp
-        elif basis_string =='se':
+        elif basis_string == 'se':
             from rbf.basis import se
             self.options['basis'] = se
-        elif basis_string =='mat32':
+        elif basis_string == 'mat32':
             from rbf.basis import mat32
             self.options['basis'] = mat32
-        elif basis_string =='mat52':
+        elif basis_string == 'mat52':
             from rbf.basis import mat52
             self.options['basis'] = mat52
-        elif basis_string =='wen10':
+        elif basis_string == 'wen10':
             from rbf.basis import wen10
             self.options['basis'] = wen10
-        elif basis_string =='wen11':
+        elif basis_string == 'wen11':
             from rbf.basis import wen11
             self.options['basis'] = wen11
-        elif basis_string =='wen12':
+        elif basis_string == 'wen12':
             from rbf.basis import wen12
             self.options['basis'] = wen12
-        elif basis_string =='wen30':
+        elif basis_string == 'wen30':
             from rbf.basis import wen30
             self.options['basis'] = wen30
-        elif basis_string =='wen31':
+        elif basis_string == 'wen31':
             from rbf.basis import wen31
             self.options['basis'] = wen31
-        elif basis_string =='wen32':
+        elif basis_string == 'wen32':
             from rbf.basis import wen32
             self.options['basis'] = wen32
         else:

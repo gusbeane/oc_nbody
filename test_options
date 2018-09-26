@@ -14,16 +14,31 @@ ngpu = 1 ; number of gpus available (default: 1)
 timestep = 0.1 ; timestep for cluster integrati
 
 [simulation]
-simulation_directory = /mnt/ceph/users/firesims/core/m12i_res7100/
+simulation_directory = /mnt/ceph/users/firesims/fire2/core/m12i_res7100/
 cache_directory = /mnt/ceph/users/abeane/oc_nbody/cache/
 startnum = 580      ; first snapshot index (where the oc sim starts)
 endnum = 585        ; last snapshot index
 num_prior = 3       ; the number of snapshots loaded before the first snapshot (default: 3)
 
-[interpolation]
+
+star_softening_in_pc = 11.2 ; star softening [pc]
+dark_softening_in_pc = 112.0 ; dark softening [pc]
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# NOTE: the best choice for softening lengths is NOT necessarily the  #
+# softening lengths in the original simulation!                       #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+[force_calculation]
+# # grid setup parameters # #
+Rmax = 50.0         ; max R to retain particles for force calculation [kpc]
+theta = 0.5         ; opening angle for tree
+
+# # interpolation parameters # #
 nclose = 150 ; number of close points to use in interpolation (default: 150)
 basis = phs3 ; basis for rbf (default: phs3)
 order = 5    ; order for rbf (default: 5)
+eps   = 1.0  ; softening parameter (default: 1)
 
 [cluster]
 N = 1024        ; number of stars in the system
@@ -52,10 +67,8 @@ ss_agemax_in_Gyr = 1 ; max age for ss (default: 1) [Gyr]
 
 [grid]
 # see paper for explanation of x, y
-grid_R_min = 5.0   ; size of grid in "x direction" [kpc]
-grid_R_max = 11.0   ; size of grid in "x direction" [kpc]
-grid_z_max = 0.5   ; size of grid in "x direction" [kpc]
-grid_phi_size = 0.2   ; size of grid in z direction [kpc]
-grid_buffer = 0.025     ; size of buffer between grid and sim for interpolation (default: 0.025) [kpc]
-grid_N = 75000
+grid_x_size_in_kpc = 0.6 ; size of grid in "x" direction [kpc]
+grid_y_size_in_kpc = 0.6 ; size of grid in "y" direction [kpc]
+grid_z_size_in_kpc = 0.6 ; size of grid in "z" direction [kpc]
+grid_resolution    = 0.005 ; grid resolution [pc]
 grid_seed = 1776       ; starting seed for grid generation, see paper for details (default: 1776)
