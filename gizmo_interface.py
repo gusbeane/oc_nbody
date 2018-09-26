@@ -25,6 +25,7 @@ from astropy.constants import G as G_astropy
 import astropy.units as u
 
 import sys
+import os
 
 class gizmo_interface(object):
     def __init__(self, options_reader, grid_snapshot=None):
@@ -47,6 +48,8 @@ class gizmo_interface(object):
         self.grid_z_size_in_kpc = 0.6
         self.grid_resolution = 0.005
 
+        if not os.ispath(self.cache_directory):
+            os.makedirs(self.cache_directory)
 
         self._read_snapshots_()            
         
