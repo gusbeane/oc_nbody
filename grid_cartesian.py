@@ -23,7 +23,7 @@ class grid(object):
         self.x_n = int(x_size_in_kpc/resolution)
         self.y_n = int(y_size_in_kpc/resolution)
         self.z_n = int(z_size_in_kpc/resolution)
-        
+
         self.x_grid = np.linspace(-x_size_in_kpc, x_size_in_kpc, num=self.x_n)
         self.y_grid = np.linspace(-y_size_in_kpc, y_size_in_kpc, num=self.y_n)
         self.z_grid = np.linspace(-z_size_in_kpc, z_size_in_kpc, num=self.z_n)
@@ -39,6 +39,9 @@ class grid(object):
             for j in range(self.y_n):
                 for k in range(self.z_n):
                     grid_positions.append([self.x_grid[i], self.y_grid[j], self.z_grid[k]])
+        # origin keeps total acc on cluster zero
+        grid_positions.append([0, 0, 0])
+
         self.init_grid = np.ascontiguousarray(grid_positions)
 
 if __name__ == '__main__':
