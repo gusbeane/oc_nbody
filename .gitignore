@@ -4,4 +4,5 @@ cache/
 notebooks/
 test/
 test_5k/
+test*
 update.sh
