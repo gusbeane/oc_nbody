@@ -14,10 +14,9 @@ from pykdgrav import ConstructKDTree, GetAccelParallel
 from astropy.constants import G as G_astropy
 import astropy.units as u
 
-from joblib import Parallel, delayed
-
 import sys
 import os
+
 
 class gizmo_interface(object):
     def __init__(self, options_reader, grid_snapshot=None):
@@ -416,8 +415,6 @@ class gizmo_interface(object):
 
         self.grid.gen_evolved_grid(position)
         self._execute_acceleration_grid_interpolators_(this_t_in_Myr)
-
-
 
         print('evolved model to t (Myr):', this_t_in_Myr)
 
