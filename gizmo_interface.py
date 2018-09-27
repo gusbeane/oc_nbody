@@ -51,6 +51,8 @@ class gizmo_interface(object):
 
         self.evolve_model(0 | units.Myr)
 
+        self.grid._grid_evolved_kdtree_ = cKDTree(self.grid.evolved_grid)
+
     def _read_snapshots_(self):
         # read in first snapshot, get rotation matrix
 
@@ -410,12 +412,12 @@ class gizmo_interface(object):
         this_t_in_Myr = time.value_in(units.Myr)
         self._evolve_starting_star_(this_t_in_Myr)
 
-        position = np.array([0,0,0])
+        position = np.array([0, 0, 0])
 
         self.grid.gen_evolved_grid(position)
         self._execute_acceleration_grid_interpolators_(this_t_in_Myr)
 
-        self.grid._grid_evolved_kdtree_ = cKDTree(self.grid.evolved_grid)
+
 
         print('evolved model to t (Myr):', this_t_in_Myr)
 
