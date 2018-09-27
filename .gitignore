@@ -1,9 +1,9 @@
 *.pyc
 __pycache__/
-cache/
 notebooks/
 test/
 test_5k/
 test_1Gyr*
 test_increased_softening*
 update.sh
+cache*
