@@ -11,8 +11,10 @@ TODO:
 
 """
 
+
 class grid(object):
-    def __init__(self, x_size_in_kpc, y_size_in_kpc, z_size_in_kpc, resolution):
+    def __init__(self, x_size_in_kpc, y_size_in_kpc, z_size_in_kpc,
+                 resolution):
         # store parameters for future convenience
         self.x_size_in_kpc = x_size_in_kpc
         self.y_size_in_kpc = y_size_in_kpc
@@ -38,11 +40,13 @@ class grid(object):
         for i in range(self.x_n):
             for j in range(self.y_n):
                 for k in range(self.z_n):
-                    grid_positions.append([self.x_grid[i], self.y_grid[j], self.z_grid[k]])
+                    grid_positions.append([self.x_grid[i],
+                                           self.y_grid[j], self.z_grid[k]])
         # origin keeps total acc on cluster zero
         grid_positions.append([0, 0, 0])
 
         self.init_grid = np.ascontiguousarray(grid_positions)
+
 
 if __name__ == '__main__':
     g = grid(0.3, 3.0, 2.0, 0.03, 8.0)
