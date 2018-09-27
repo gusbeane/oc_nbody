@@ -41,9 +41,11 @@ order = 5    ; order for rbf (default: 5)
 eps   = 1.0  ; softening parameter (default: 1)
 
 [cluster]
-N = 1024        ; number of stars in the system
+N = 1024        ; number of stars in the cluster
 W0 = 3          ; king parameter
-Mcluster = 1e3  ; mass of cluster [Msun]
+use_kroupa = true ; whether to assign masses according to kroupa IMF (default: true)
+kroupa_max = 10.0 ; max mass for kroupa IMF [Msun] (default: 100.0)
+Mcluster = 1e3  ; mass of cluster, not necessary if using kroupa [Msun] (default: None)
 Rcluster = 0.8  ; size of cluster [pc]
 softening = 0.01 ; softening length for cluster [pc]
 

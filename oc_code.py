@@ -2,6 +2,7 @@ import numpy as np
 from amuse.units import units, nbody_system
 from amuse.ic.kingmodel import new_king_model
 from oceanic.options import options_reader
+from amuse.lab import new_kroupa_mass_distribution
 
 
 class oc_code(object):
@@ -15,6 +16,10 @@ class oc_code(object):
                                                   self.Rcluster | units.parsec)
         self.bodies = new_king_model(self.N, self.W0,
                                      convert_nbody=self.converter)
+        if self.use_kroupa is True:
+            self.bodies.mass = \
+                new_kroupa_mass_distribution(self.N,
+                                             self.kroupa_max | units.MSun)
 
         if self.gpu_enabled:
             self.code = self.nbodycode(self.converter,

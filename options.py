@@ -1,5 +1,6 @@
 from configparser import ConfigParser
 
+
 class options_reader(object):
     def __init__(self, file):
         self.parser = ConfigParser(inline_comment_prefixes=';')
@@ -38,12 +39,14 @@ class options_reader(object):
         self._read_optional_option_('force_calculation', 'eps', '1.0')
 
         # read in cluster parameters
-        for opt in ['N', 'W0', 'Mcluster', 'Rcluster', 'softening',
-                    'nbodycode',
+        for opt in ['N', 'W0', 'Rcluster', 'softening',
+                    'nbodycode', 'use_kroupa',
                     'timestep', 'tend']:
             self._read_required_option_('cluster', opt)
 
         self._read_optional_option_('cluster', 'eject_cut', '300.0')
+        self._read_optional_option_('cluster', 'Mcluster', None)
+        self._read_optional_option_('cluster', 'kroupa_max', '100.0')
 
         # read in starting_star parameters
         for opt in ['ss_Rmin', 'ss_Rmax', 'ss_zmin', 'ss_zmax']:
@@ -62,8 +65,8 @@ class options_reader(object):
 
         # convert relevant parameters
         int_options = ['startnum', 'endnum', 'num_prior', 'nclose', 'order',
-                        'ss_seed',
-                        'ncpu', 'ngpu', 'N', 'W0', 'grid_seed']
+                       'ss_seed',
+                       'ncpu', 'ngpu', 'N', 'W0', 'grid_seed']
         for opt in int_options:
             if opt in self.options.keys():
                 self.options[opt] = int(self.options[opt])
@@ -75,25 +78,18 @@ class options_reader(object):
                          'star_softening_in_pc', 'dark_softening_in_pc',
                          'Rmax', 'theta',
                          'grid_x_size_in_kpc', 'grid_y_size_in_kpc',
-                         'grid_z_size_in_kpc', 'grid_resolution']
+                         'grid_z_size_in_kpc', 'grid_resolution', 'kroupa_max']
         for opt in float_options:
             if opt in self.options.keys():
                 self.options[opt] = float(self.options[opt])
 
-        bool_options = ['gpu_enabled']
+        bool_options = ['gpu_enabled', 'use_kroupa']
         for opt in bool_options:
             if opt in self.options.keys():
                 self.options[opt] = self._convert_bool_(self.options[opt])
 
         self._convert_rbf_basis_(self.options['basis'])
         self._convert_nbodycode_(self.options['nbodycode'])
-
-        """
-        for s in ['x', 'y', 'z']:
-            val = self.options['grid_'+s+'_size']
-            val += self.options['grid_buffer']
-            self.options['grid_'+s+'_max'] = val
-        """
 
     def set_options(self, object):
         for key in self.options.keys():
@@ -198,6 +194,7 @@ class options_reader(object):
             self.options['nbodycode'] = ph4
         else:
             raise Exception("Can't recognize given code: "+code_string)
+
 
 if __name__ == '__main__':
     import sys
