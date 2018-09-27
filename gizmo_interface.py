@@ -55,7 +55,8 @@ class gizmo_interface(object):
 
         # just gonna take a peak into the sim and see if we have it in cache
         head = gizmo.io.Read.read_header(snapshot_value=self.startnum,
-            simulation_directory=self.simulation_directory)
+                                         simulation_directory=
+                                         self.simulation_directory)
         if self.sim_name is None:
             self.sim_name = head['simulation.name'].replace(" ", "_")
         cache_name = 'first_snapshot_' + self.sim_name+'_index' + \
@@ -71,28 +72,30 @@ class gizmo_interface(object):
             print('couldnt find cached file for first_snapshot:')
             print(cache_name)
             print('constructing...')
-            self.first_snapshot = gizmo.io.Read.read_snapshots(['star','gas','dark'], 'index', self.startnum,
-                                                    simulation_directory=self.simulation_directory, assign_center=False)#,
-                                                    #particle_subsample_factor=20)
-            pickle.dump(self.first_snapshot, open(cache_file, 'wb'), protocol=4)
-
-        """
-        self.first_snapshot = gizmo.io.Read.read_snapshots(['star','gas','dark'], 'index', self.startnum,
-                                        simulation_directory=self.simulation_directory, assign_center=False)#,
-                                        #particle_subsample_factor=20)
-        """
+            self.first_snapshot =\
+                gizmo.io.Read.read_snapshots(['star', 'gas', 'dark'],
+                                             'index', self.startnum,
+                                             simulation_directory=
+                                             self.simulation_directory,
+                                             assign_center=False)
+            pickle.dump(self.first_snapshot,
+                        open(cache_file, 'wb'), protocol=4)
 
         gizmo.io.Read.assign_center(self.first_snapshot)
         gizmo.io.Read.assign_principal_axes(self.first_snapshot)
         self.center_position = self.first_snapshot.center_position
         self.center_velocity = self.first_snapshot.center_velocity
-        self.principal_axes_vectors = self.first_snapshot.principal_axes_vectors
+        self.principal_axes_vectors =\
+            self.first_snapshot.principal_axes_vectors
 
         # store some other relevant information
-        self.first_snapshot_time_in_Myr = self.first_snapshot.snapshot['time'] * 1000.0
+        self.first_snapshot_time_in_Myr =\
+            self.first_snapshot.snapshot['time'] * 1000.0
 
-        # read in all snapshots, but only the necessary quantities, and recenter
-        self.snapshot_indices = range(self.startnum-self.num_prior, self.endnum+1)
+        # read in all snapshots,
+        # but only the necessary quantities, and recenter
+        self.snapshot_indices = range(self.startnum-self.num_prior,
+                                      self.endnum+1)
         self.initial_key = self.num_prior
 
         init = self.snapshot_indices[0]
@@ -108,10 +111,15 @@ class gizmo_interface(object):
             print('couldnt find cached file for snapshots:')
             print(cache_name)
             print('constructing...')
-            self.snapshots = gizmo.io.Read.read_snapshots(['star','gas','dark'], 'index', self.snapshot_indices,
-                                                        properties=['position', 'id', 'mass', 'smooth.length'],
-                                                        simulation_directory=self.simulation_directory, assign_center=False)#,
-                                                        #particle_subsample_factor=20) #, properties=['position','potential'])
+            self.snapshots =\
+                gizmo.io.Read.read_snapshots(['star', 'gas', 'dark'],
+                                             'index', self.snapshot_indices,
+                                             properties=['position', 'id',
+                                                         'mass',
+                                                         'smooth.length'],
+                                             simulation_directory=
+                                             self.simulation_directory,
+                                             assign_center=False)
 
             for snap in self.snapshots:
                 self._assign_self_center_(snap)
@@ -127,7 +135,7 @@ class gizmo_interface(object):
     def _clean_Rmag_(self, snap):
         for key in snap.keys():
             rmag = np.linalg.norm(snap[key].prop('host.distance.principal'),
-                axis=1)
+                                  axis=1)
             rmag_keys = np.where(rmag < self.Rmax)[0]
             for dict_key in snap[key].keys():
                 snap[key][dict_key] = snap[key][dict_key][rmag_keys]
@@ -138,8 +146,9 @@ class gizmo_interface(object):
             this_center_position = self.center_position
         else:
             snapshot_time_in_Myr = part.snapshot['time'] * 1000.0
-            offset = self.center_velocity * (snapshot_time_in_Myr - \
-                self.first_snapshot_time_in_Myr)
+            offset = self.center_velocity *\
+                        (snapshot_time_in_Myr - self.first_snapshot_time_in_Myr)
+
             offset *= self.convert_kms_Myr_to_kpc
             this_center_position = self.center_position + offset
 
@@ -258,20 +267,31 @@ class gizmo_interface(object):
             self.grid.gen_evolved_grid(position)
 
             try:
-                snap_cache_name, snap_cache_file = self._grid_cache_name_(snap.snapshot['index'])
-                snap_cache_file_x = snap_cache_file.replace('snapshot', 'snapshot_x')
-                snap_cache_file_y = snap_cache_file.replace('snapshot', 'snapshot_y')
-                snap_cache_file_z = snap_cache_file.replace('snapshot', 'snapshot_z')
+                snap_cache_name, snap_cache_file =\
+                    self._grid_cache_name_(snap.snapshot['index'])
+                snap_cache_file_x =\
+                    snap_cache_file.replace('snapshot', 'snapshot_x')
+                snap_cache_file_y =\
+                    snap_cache_file.replace('snapshot', 'snapshot_y')
+                snap_cache_file_z =\
+                    snap_cache_file.replace('snapshot', 'snapshot_z')
 
-                this_snapshot_grid_x = pickle.load(open(snap_cache_file_x, 'rb'))
-                this_snapshot_grid_y = pickle.load(open(snap_cache_file_y, 'rb'))
-                this_snapshot_grid_z = pickle.load(open(snap_cache_file_z, 'rb'))
+                this_snapshot_grid_x =\
+                    pickle.load(open(snap_cache_file_x, 'rb'))
+                this_snapshot_grid_y =\
+                    pickle.load(open(snap_cache_file_y, 'rb'))
+                this_snapshot_grid_z =\
+                    pickle.load(open(snap_cache_file_z, 'rb'))
             except:
-                this_snapshot_grid_x, this_snapshot_grid_y, this_snapshot_grid_z = \
+                this_snapshot_grid_x, this_snapshot_grid_y,\
+                    this_snapshot_grid_z =\
                     self._populate_grid_acceleration_(snap, self.grid)
-                pickle.dump(this_snapshot_grid_x, open(snap_cache_file_x, 'wb'), protocol=4)
-                pickle.dump(this_snapshot_grid_y, open(snap_cache_file_y, 'wb'), protocol=4)
-                pickle.dump(this_snapshot_grid_z, open(snap_cache_file_z, 'wb'), protocol=4)
+                pickle.dump(this_snapshot_grid_x,
+                            open(snap_cache_file_x, 'wb'), protocol=4)
+                pickle.dump(this_snapshot_grid_y,
+                            open(snap_cache_file_y, 'wb'), protocol=4)
+                pickle.dump(this_snapshot_grid_z,
+                            open(snap_cache_file_z, 'wb'), protocol=4)
 
             self.grid.snapshot_acceleration_x.append(
                 this_snapshot_grid_x)
@@ -280,9 +300,12 @@ class gizmo_interface(object):
             self.grid.snapshot_acceleration_z.append(
                 this_snapshot_grid_z)
 
-        self.grid.snapshot_acceleration_x = np.array(self.grid.snapshot_acceleration_x)
-        self.grid.snapshot_acceleration_y = np.array(self.grid.snapshot_acceleration_y)
-        self.grid.snapshot_acceleration_z = np.array(self.grid.snapshot_acceleration_z)
+        self.grid.snapshot_acceleration_x =\
+            np.array(self.grid.snapshot_acceleration_x)
+        self.grid.snapshot_acceleration_y =\
+            np.array(self.grid.snapshot_acceleration_y)
+        self.grid.snapshot_acceleration_z =\
+            np.array(self.grid.snapshot_acceleration_z)
 
         self._init_acceleration_grid_interpolators_()
 
@@ -442,18 +465,13 @@ class gizmo_interface(object):
             az = float(rbfi_z([[xlist, ylist, zlist]])) | units.kms/units.Myr
             return ax, ay, az
 
-
     def _init_starting_star_(self):
-        # self.chosen_position_z0, self.chosen_velocity_z0, self.chosen_index_z0, self.chosen_id = self.starting_star(
         self.chosen_position_z0, self.chosen_index_z0, self.chosen_id = self.starting_star(
                             self.ss_Rmin, self.ss_Rmax, self.ss_zmin, self.ss_zmax,
                             self.ss_agemin_in_Gyr, self.ss_agemax_in_Gyr, self.ss_seed)
 
     def starting_star(self, Rmin, Rmax, zmin, zmax, agemin_in_Gyr, agemax_in_Gyr, seed=1776):
         np.random.seed(seed)
-        #starages = self.first_snapshot['star'].prop('age')
-        #pos = self.first_snapshot['star']['position']
-        #vel = self.first_snapshot['star']['velocity']
 
         starages = self.first_snapshot['star'].prop('age')
         pos = self.first_snapshot['star'].prop('host.distance.principal')
@@ -462,11 +480,12 @@ class gizmo_interface(object):
         Rstar = np.sqrt(pos[:,0]*pos[:,0] + pos[:,1]*pos[:,1])
         zstar = pos[:,2]
 
-        agebool = np.logical_and(starages > agemin_in_Gyr, starages < agemax_in_Gyr)
+        agebool = np.logical_and(starages > agemin_in_Gyr,
+                                 starages < agemax_in_Gyr)
         Rbool = np.logical_and(Rstar > Rmin, Rstar < Rmax)
         zbool = np.logical_and(zstar > zmin, zstar < zmax)
 
-        totbool = np.logical_and(np.logical_and(agebool,Rbool), zbool)
+        totbool = np.logical_and(np.logical_and(agebool, Rbool), zbool)
         keys = np.where(totbool)[0]
 
         chosen_one = np.random.choice(keys)
