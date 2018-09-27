@@ -66,6 +66,8 @@ ss_zmax = 0.1   ; max z ... [kpc]
 ss_seed = 1776  ; seed for ss rng (default: 1776)
 ss_agemin_in_Gyr = 0 ; min age for ss (default: 0) [Gyr]
 ss_agemax_in_Gyr = 1 ; max age for ss (default: 1) [Gyr]
+# ss_id = 12354
+# can also provide ss_id, will override Rmin, Rmax, etc...
 
 [grid]
 # see paper for explanation of x, y

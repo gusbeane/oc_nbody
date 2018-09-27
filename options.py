@@ -49,12 +49,28 @@ class options_reader(object):
         self._read_optional_option_('cluster', 'kroupa_max', '100.0')
 
         # read in starting_star parameters
-        for opt in ['ss_Rmin', 'ss_Rmax', 'ss_zmin', 'ss_zmax']:
-            self._read_required_option_('starting_star', opt)
+        # for opt in ['ss_Rmin', 'ss_Rmax', 'ss_zmin', 'ss_zmax']:
+        #    self._read_required_option_('starting_star', opt)
+
+        self._read_optional_option_('starting_star', 'ss_Rmin', None)
+        self._read_optional_option_('starting_star', 'ss_Rmax', None)
+        self._read_optional_option_('starting_star', 'ss_zmin', None)
+        self._read_optional_option_('starting_star', 'ss_zmax', None)
 
         self._read_optional_option_('starting_star', 'ss_agemin_in_Gyr', '0')
         self._read_optional_option_('starting_star', 'ss_agemax_in_Gyr', '0')
         self._read_optional_option_('starting_star', 'ss_seed', '1776')
+        self._read_optional_option_('starting_star', 'ss_id', None)
+
+        ss_array = [self.options['ss_Rmin'], self.options['ss_Rmax'],
+                    self.options['ss_zmin'], self.options['ss_zmax']]
+
+        if self.options['ss_id'] is None and None in ss_array:
+            print('if ss_id is not given, you must provide Rmin, Rmax,')
+            print('zmin, zmax. Exiting...')
+            raise Exception('insufficient information to determine ss')
+        elif self.options['ss_id'] is not None:
+            self.options['ss_id'] = int(self.options['ss_id'])
 
         # read in grid parameters
         for opt in ['grid_x_size_in_kpc', 'grid_y_size_in_kpc',

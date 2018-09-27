@@ -352,7 +352,7 @@ class gizmo_interface(object):
 
         print('tree calculated, now evaluating')
         accel = GetAccelParallel(grid.evolved_grid, tree, self.G, self.theta)
-        #TODO make this step less hacky
+        # TODO make this step less hacky
         accel_center = GetAccelParallel(np.array([grid.ss_evolved_position]), tree, self.G, self.theta)[0]
 
         # remove total acceleration of frame, which we are NOT trying to capture
@@ -480,6 +480,12 @@ class gizmo_interface(object):
                             self.ss_agemin_in_Gyr, self.ss_agemax_in_Gyr, self.ss_seed)
 
     def starting_star(self, Rmin, Rmax, zmin, zmax, agemin_in_Gyr, agemax_in_Gyr, seed=1776):
+        if self.ss_id is not None:
+            pos = self.first_snapshot['star'].prop('host.distance.principal')
+            chosen_one = np.where(self.first_snapshots['star']['id'] ==\
+                                  self.ss_id)[0]
+            return pos[chosen_one], chosen_one, self.ss_id
+
         np.random.seed(seed)
 
         starages = self.first_snapshot['star'].prop('age')
