@@ -37,7 +37,9 @@ def evolve_cluster_in_galaxy(options_file):
     for i, t in enumerate(tqdm(times)):
         system.evolve_model(t, timestep=timestep | units.Myr)
         cluster.clean_ejections(system)
-        snap_reader.process_snapshot(system, galaxy_code, t)
+        snap_reader.process_snapshot(system, galaxy_code, i, t)
+
+    snap_reader.finish_sim(system, galaxy_code)
 
     cluster_code.stop()
 

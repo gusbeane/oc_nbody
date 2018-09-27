@@ -12,6 +12,7 @@ gpu_enabled = false ; whether or not to use the gpu version of ph4 (default: fal
 ngpu = 1 ; number of gpus available (default: 1)
 
 timestep = 0.1 ; timestep for cluster integrati
+write_frequency = 50 ; how often to write cluster snapshot to disk (default: 10)
 
 [simulation]
 simulation_directory = /mnt/ceph/users/firesims/fire2/core/m12i_res7100/

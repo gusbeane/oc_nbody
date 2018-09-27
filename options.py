@@ -19,6 +19,7 @@ class options_reader(object):
         self._read_optional_option_('general', 'ncpu', '1')
         self._read_optional_option_('general', 'gpu_enabled', 'false')
         self._read_optional_option_('general', 'ngpu', '1')
+        self._read_optional_option_('general', 'write_frequency', '10')
 
         # read in simulation parameters
         for opt in ['simulation_directory', 'cache_directory', 'startnum',
@@ -81,7 +82,7 @@ class options_reader(object):
 
         # convert relevant parameters
         int_options = ['startnum', 'endnum', 'num_prior', 'nclose', 'order',
-                       'ss_seed',
+                       'ss_seed', 'write_frequency',
                        'ncpu', 'ngpu', 'N', 'W0', 'grid_seed']
         for opt in int_options:
             if opt in self.options.keys():

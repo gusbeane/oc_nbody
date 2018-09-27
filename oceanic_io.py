@@ -7,8 +7,12 @@ class snapshot_reader(object):
         options_reader.set_options(self)
         self.frames = []
 
-    def process_snapshot(self, system, galaxy_code, time):
+    def process_snapshot(self, system, galaxy_code, i, time, final=None):
         self.frames.append(self._grab_frame_(system, galaxy_code, time))
+        if np.mod(i, self.write_frequency) == 0:
+            np.save(self.output_directory+'/cluster_snapshots', self.frames)
+
+    def finish_sim(self):
         np.save(self.output_directory+'/cluster_snapshots', self.frames)
 
     def _grab_frame_(self, system, galaxy_code, time):
