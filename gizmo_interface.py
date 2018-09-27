@@ -2,7 +2,6 @@ import matplotlib; matplotlib.use('agg')
 
 import numpy as np
 import gizmo_analysis as gizmo
-import utilities as ut
 from scipy import interpolate
 from scipy.spatial import cKDTree
 from rbf.interpolate import RBFInterpolant
@@ -14,6 +13,8 @@ import pickle
 from pykdgrav import ConstructKDTree, GetAccelParallel
 from astropy.constants import G as G_astropy
 import astropy.units as u
+
+from joblib import Parallel, delayed
 
 import sys
 import os
@@ -384,16 +385,25 @@ class gizmo_interface(object):
             self.grid.grid_accz_interpolators.append(
                     interpolate.splrep(self.time_in_Myr, self.grid.snapshot_acceleration_z[:,i]))
 
+    def _acceleration_grid_step_(self, interpolators, t):
+        output = [interpolate.splev(t, interp)
+                  for interp in interpolators]
+        return output
+
     def _execute_acceleration_grid_interpolators_(self, t):
-        self.grid.evolved_acceleration_x = [interpolate.splev(t, self.grid.grid_accx_interpolators[i])\
-                for i in range(len(self.grid.evolved_grid))]
-        self.grid.evolved_acceleration_y = [interpolate.splev(t, self.grid.grid_accy_interpolators[i])\
-                for i in range(len(self.grid.evolved_grid))]
-        self.grid.evolved_acceleration_z = [interpolate.splev(t, self.grid.grid_accz_interpolators[i])\
-                for i in range(len(self.grid.evolved_grid))]
-        self.grid.evolved_acceleration_x = np.array(self.grid.evolved_acceleration_x)
-        self.grid.evolved_acceleration_y = np.array(self.grid.evolved_acceleration_y)
-        self.grid.evolved_acceleration_z = np.array(self.grid.evolved_acceleration_z)
+        evolved_acceleration_x =\
+                [interpolate.splev(t, interp)
+                 for interp in self.grid.grid_accx_interpolators]
+        evolved_acceleration_y =\
+                [interpolate.splev(t, interp)
+                 for interp in self.grid.grid_accy_interpolators]
+        evolved_acceleration_z =\
+                [interpolate.splev(t, interp)
+                 for interp in self.grid.grid_accz_interpolators]
+
+        self.grid.evolved_acceleration_x = np.array(evolved_acceleration_x)
+        self.grid.evolved_acceleration_y = np.array(evolved_acceleration_y)
+        self.grid.evolved_acceleration_z = np.array(evolved_acceleration_z)
 
     def evolve_model(self, time, timestep=None):
 
