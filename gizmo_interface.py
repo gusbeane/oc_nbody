@@ -362,13 +362,12 @@ class gizmo_interface(object):
                     interpolate.splrep(self.time_in_Myr, self.grid.snapshot_acceleration_z[:,i]))
 
     def _execute_acceleration_grid_interpolators_(self, t):
-        self.grid.evolved_acceleration_x = []
-        self.grid.evolved_acceleration_y = []
-        self.grid.evolved_acceleration_z = []
-        for i in range(len(self.grid.evolved_grid)):
-            self.grid.evolved_acceleration_x.append(interpolate.splev(t, self.grid.grid_accx_interpolators[i]))
-            self.grid.evolved_acceleration_y.append(interpolate.splev(t, self.grid.grid_accy_interpolators[i]))
-            self.grid.evolved_acceleration_z.append(interpolate.splev(t, self.grid.grid_accz_interpolators[i]))
+        self.grid.evolved_acceleration_x = [interpolate.splev(t, self.grid.grid_accx_interpolators[i])\
+                for i in range(len(self.grid.evolved_grid))]
+        self.grid.evolved_acceleration_y = [interpolate.splev(t, self.grid.grid_accy_interpolators[i])\
+                for i in range(len(self.grid.evolved_grid))]
+        self.grid.evolved_acceleration_z = [interpolate.splev(t, self.grid.grid_accz_interpolators[i])\
+                for i in range(len(self.grid.evolved_grid))]
         self.grid.evolved_acceleration_x = np.array(self.grid.evolved_acceleration_x)
         self.grid.evolved_acceleration_y = np.array(self.grid.evolved_acceleration_y)
         self.grid.evolved_acceleration_z = np.array(self.grid.evolved_acceleration_z)
