@@ -4,5 +4,6 @@ cache/
 notebooks/
 test/
 test_5k/
-test*
+test_1Gyr*
+test_increased_softening*
 update.sh
