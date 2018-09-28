@@ -76,4 +76,10 @@ grid_x_size_in_kpc = 0.6 ; size of grid in "x" direction [kpc]
 grid_y_size_in_kpc = 0.6 ; size of grid in "y" direction [kpc]
 grid_z_size_in_kpc = 0.6 ; size of grid in "z" direction [kpc]
 grid_resolution    = 0.005 ; grid resolution [pc]
+grid_fine_x_size_in_kpc = 0.02 ; OPTIONAL
+grid_fine_y_size_in_kpc = 0.02
+grid_fine_z_size_in_kpc = 0.02
+grid_fine_resolution = 0.0005
+
+
 grid_seed = 1776       ; starting seed for grid generation, see paper for details (default: 1776)

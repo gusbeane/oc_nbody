@@ -88,9 +88,9 @@ class gizmo_interface(object):
         else:
             self._init_grid_()
 
-        #self.evolve_model(0 | units.Myr)
+        self.evolve_model(0 | units.Myr)
 
-        #self.grid._grid_evolved_kdtree_ = cKDTree(self.grid.evolved_grid)
+        self.grid._grid_evolved_kdtree_ = cKDTree(self.grid.evolved_grid)
 
     def _read_snapshots_(self):
         # read in first snapshot, get rotation matrix
@@ -242,6 +242,11 @@ class gizmo_interface(object):
         cache_name += '_theta' + str(self.theta) + '_grid_x_size' + str(self.grid_x_size_in_kpc)
         cache_name += '_grid_y_size' + str(self.grid_y_size_in_kpc)
         cache_name += '_grid_z_size' + str(self.grid_z_size_in_kpc)
+        if self.fine_grid:
+            cache_name += '_fine_grid_x_size' + str(self.grid_fine_x_size_in_kpc)
+            cache_name += '_fine_grid_y_size' + str(self.grid_fine_y_size_in_kpc)
+            cache_name += '_fine_grid_z_size' + str(self.grid_fine_z_size_in_kpc)
+            cache_name += '_fine_grid_resolution' + str(self.grid_fine_resolution)
         cache_name += '_start'+str(self.startnum)
         cache_name += '_end'+str(self.endnum)+'_numprior'+str(self.num_prior)
         return cache_name, self.cache_directory + '/' + cache_name

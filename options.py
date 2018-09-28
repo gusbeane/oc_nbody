@@ -79,6 +79,13 @@ class options_reader(object):
             self._read_required_option_('grid', opt)
 
         self._read_optional_option_('grid', 'grid_seed', '1776')
+        self._read_optional_option_('grid', 'grid_fine_x_size_in_kpc', None)
+        self._read_optional_option_('grid', 'grid_fine_y_size_in_kpc', None)
+        self._read_optional_option_('grid', 'grid_fine_z_size_in_kpc', None)
+        self._read_optional_option_('grid', 'grid_fine_resolution', None)
+
+        if self.options['grid_fine_x_size_in_kpc'] is not None:
+            self.options['fine_grid'] = True
 
         # convert relevant parameters
         int_options = ['startnum', 'endnum', 'num_prior', 'nclose', 'order',
