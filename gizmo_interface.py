@@ -14,7 +14,7 @@ from pykdgrav import ConstructKDTree, GetAccelParallel
 from astropy.constants import G as G_astropy
 import astropy.units as u
 
-from multiprocessing import Pool, Manager
+from multiprocessing import Pool
 
 import sys
 import os
@@ -142,7 +142,9 @@ class gizmo_interface(object):
 
         init = self.snapshot_indices[0]
         fin = self.snapshot_indices[-1]
-        cache_name = 'snapshots_'+self.sim_name+'_start'+str(init)+'_end'+str(fin)+'_first'+str(self.startnum)+'_Rmag'+str(self.Rmax)+'.p'
+        cache_name = 'snapshots_' + self.sim_name + '_start' + str(init)⁠⁠⁠
+        cache_name += '_end' + str(fin) + '_first' + str(self.startnum)
+        cache_name += '_Rmag' + str(self.Rmax) + '.p'
         cache_file = self.cache_directory + '/' + cache_name
 
         try:
@@ -188,10 +190,11 @@ class gizmo_interface(object):
             this_center_position = self.center_position
         else:
             snapshot_time_in_Myr = part.snapshot['time'] * 1000.0
-            offset = self.center_velocity *\
-                        (snapshot_time_in_Myr - self.first_snapshot_time_in_Myr)
 
+            offset = self.center_velocity
+            offset *= (snapshot_time_in_Myr - self.first_snapshot_time_in_Myr)
             offset *= self.convert_kms_Myr_to_kpc
+
             this_center_position = self.center_position + offset
 
         print('this center position:', this_center_position)
@@ -204,10 +207,11 @@ class gizmo_interface(object):
             part[key].principal_axes_vectors = self.principal_axes_vectors
 
     def _time_in_Myr_(self):
-        original_times_in_Gyr = np.array([self.snapshots[i].snapshot['time'] \
-            for i in range(len(self.snapshots))])
-        time_in_Myr = (original_times_in_Gyr - \
-                        original_times_in_Gyr[self.initial_key]) * 1000.0
+        original_times_in_Gyr = np.array([self.snapshots[i].snapshot['time']
+                                          for i in range(len(self.snapshots))])
+        time_in_Myr = original_times_in_Gyr
+        time_in_Myr -= original_times_in_Gyr[self.initial_key]) * 1000.0
+
         return time_in_Myr
 
     def _init_starting_star_interpolators_(self):
@@ -341,12 +345,9 @@ class gizmo_interface(object):
                 pickle.dump(this_snapshot_grid_z,
                             open(snap_cache_file_z, 'wb'), protocol=4)
 
-            self.grid.snapshot_acceleration_x.append(
-                this_snapshot_grid_x)
-            self.grid.snapshot_acceleration_y.append(
-                this_snapshot_grid_y)
-            self.grid.snapshot_acceleration_z.append(
-                this_snapshot_grid_z)
+            self.grid.snapshot_acceleration_x.append(this_snapshot_grid_x)
+            self.grid.snapshot_acceleration_y.append(this_snapshot_grid_y)
+            self.grid.snapshot_acceleration_z.append(this_snapshot_grid_z)
 
         self.grid.snapshot_acceleration_x =\
             np.array(self.grid.snapshot_acceleration_x)
