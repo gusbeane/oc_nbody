@@ -14,8 +14,48 @@ from pykdgrav import ConstructKDTree, GetAccelParallel
 from astropy.constants import G as G_astropy
 import astropy.units as u
 
+from multiprocessing import Pool, Manager
+
 import sys
 import os
+
+
+class acc_wrapper(object):
+    def __init__(self):
+        pass
+
+    def init_interp(self, interpolators_x, interpolators_y,
+                    interpolators_z):
+        self.interpolators_x = interpolators_x
+        self.interpolators_y = interpolators_y
+        self.interpolators_z = interpolators_z
+
+    def x(self, t, i):
+        return interpolate.splev(t, self.interpolators_x[i])
+
+    def y(self, t, i):
+        return interpolate.splev(t, self.interpolators_y[i])
+
+    def z(self, t, i):
+        return interpolate.splev(t, self.interpolators_z[i])
+
+
+def init_worker(interpolators_x, interpolators_y, interpolators_z):
+    global acc_wrap
+    acc_wrap = acc_wrapper()
+    acc_wrap.init_interp(interpolators_x, interpolators_y, interpolators_z)
+
+
+def run_worker_x(t, i):
+    return acc_wrap.x(t, i)
+
+
+def run_worker_y(t, i):
+    return acc_wrap.y(t, i)
+
+
+def run_worker_z(t, i):
+    return acc_wrap.z(t, i)
 
 
 class gizmo_interface(object):
@@ -48,9 +88,9 @@ class gizmo_interface(object):
         else:
             self._init_grid_()
 
-        self.evolve_model(0 | units.Myr)
+        #self.evolve_model(0 | units.Myr)
 
-        self.grid._grid_evolved_kdtree_ = cKDTree(self.grid.evolved_grid)
+        #self.grid._grid_evolved_kdtree_ = cKDTree(self.grid.evolved_grid)
 
     def _read_snapshots_(self):
         # read in first snapshot, get rotation matrix
@@ -210,6 +250,7 @@ class gizmo_interface(object):
         grid_cache_name, grid_cache_file = self._grid_cache_name_()
         try:
             self.grid = pickle.load(open(grid_cache_file, 'rb'))
+            self._init_acceleration_grid_interpolators_()
             return None
         except:
             print('couldnt find cached grid:')
@@ -386,21 +427,23 @@ class gizmo_interface(object):
             self.grid.grid_accz_interpolators.append(
                     interpolate.splrep(self.time_in_Myr, self.grid.snapshot_acceleration_z[:,i]))
 
-    def _acceleration_grid_step_(self, interpolators, t):
-        output = [interpolate.splev(t, interp)
-                  for interp in interpolators]
-        return output
+        global acc_pool
+        acc_pool = Pool(processes=self.ncpu,
+                        initializer=init_worker,
+                        initargs=(self.grid.grid_accx_interpolators,
+                                  self.grid.grid_accy_interpolators,
+                                  self.grid.grid_accz_interpolators))
 
     def _execute_acceleration_grid_interpolators_(self, t):
         evolved_acceleration_x =\
-                [interpolate.splev(t, interp)
-                 for interp in self.grid.grid_accx_interpolators]
+            acc_pool.starmap(run_worker_x, [(t, i) for i in
+                             range(len(self.grid.grid_accx_interpolators))])
         evolved_acceleration_y =\
-                [interpolate.splev(t, interp)
-                 for interp in self.grid.grid_accy_interpolators]
+            acc_pool.starmap(run_worker_x, [(t, i) for i in
+                             range(len(self.grid.grid_accy_interpolators))])
         evolved_acceleration_z =\
-                [interpolate.splev(t, interp)
-                 for interp in self.grid.grid_accz_interpolators]
+            acc_pool.starmap(run_worker_x, [(t, i) for i in
+                             range(len(self.grid.grid_accz_interpolators))])
 
         self.grid.evolved_acceleration_x = np.array(evolved_acceleration_x)
         self.grid.evolved_acceleration_y = np.array(evolved_acceleration_y)
@@ -424,7 +467,6 @@ class gizmo_interface(object):
 
         self.chosen_evolved_position = np.array(self.chosen_evolved_position)
         # self.chosen_evolved_velocity = np.array(self.chosen_evolved_velocity)
-
 
     def _get_pot_rbfi_(self, x, y, z):
         # returns the rbfi interpolator
