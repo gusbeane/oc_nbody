@@ -39,7 +39,7 @@ def evolve_cluster_in_galaxy(options_file):
         cluster.clean_ejections(system)
         snap_reader.process_snapshot(system, galaxy_code, i, t)
 
-    snap_reader.finish_sim(system, galaxy_code)
+    snap_reader.finish_sim()
 
     cluster_code.stop()
 
