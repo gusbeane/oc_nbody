@@ -142,7 +142,7 @@ class gizmo_interface(object):
 
         init = self.snapshot_indices[0]
         fin = self.snapshot_indices[-1]
-        cache_name = 'snapshots_' + self.sim_name + '_start' + str(init)⁠⁠⁠
+        cache_name = 'snapshots_' + self.sim_name + '_start' + str(init)
         cache_name += '_end' + str(fin) + '_first' + str(self.startnum)
         cache_name += '_Rmag' + str(self.Rmax) + '.p'
         cache_file = self.cache_directory + '/' + cache_name
@@ -210,7 +210,7 @@ class gizmo_interface(object):
         original_times_in_Gyr = np.array([self.snapshots[i].snapshot['time']
                                           for i in range(len(self.snapshots))])
         time_in_Myr = original_times_in_Gyr
-        time_in_Myr -= original_times_in_Gyr[self.initial_key]) * 1000.0
+        time_in_Myr -= original_times_in_Gyr[self.initial_key] * 1000.0
 
         return time_in_Myr
 
