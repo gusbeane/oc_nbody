@@ -20,6 +20,8 @@ class oc_code(object):
             self.bodies.mass = \
                 new_kroupa_mass_distribution(self.N,
                                              self.kroupa_max | units.MSun)
+            # rescale velocities to be in virial equilibrium
+            self.bodies.scale_to_standard(convert_nbody=self.converter)
 
         if self.gpu_enabled:
             self.code = self.nbodycode(self.converter,
