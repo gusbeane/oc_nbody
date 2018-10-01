@@ -445,10 +445,10 @@ class gizmo_interface(object):
             acc_pool.starmap(run_worker_x, [(t, i) for i in
                              range(len(self.grid.grid_accx_interpolators))])
         evolved_acceleration_y =\
-            acc_pool.starmap(run_worker_x, [(t, i) for i in
+            acc_pool.starmap(run_worker_y, [(t, i) for i in
                              range(len(self.grid.grid_accy_interpolators))])
         evolved_acceleration_z =\
-            acc_pool.starmap(run_worker_x, [(t, i) for i in
+            acc_pool.starmap(run_worker_y, [(t, i) for i in
                              range(len(self.grid.grid_accz_interpolators))])
 
         self.grid.evolved_acceleration_x = np.array(evolved_acceleration_x)
