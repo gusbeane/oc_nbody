@@ -209,7 +209,7 @@ class gizmo_interface(object):
     def _time_in_Myr_(self):
         original_times_in_Gyr = np.array([self.snapshots[i].snapshot['time']
                                           for i in range(len(self.snapshots))])
-        time_in_Myr = original_times_in_Gyr
+        time_in_Myr = original_times_in_Gyr * 1000.0
         time_in_Myr -= original_times_in_Gyr[self.initial_key] * 1000.0
 
         return time_in_Myr
