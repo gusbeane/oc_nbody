@@ -23,6 +23,8 @@ class oc_code(object):
             # rescale velocities to be in virial equilibrium
             self.bodies.scale_to_standard(convert_nbody=self.converter)
 
+        self.bodies.move_to_center()
+
         if self.gpu_enabled:
             self.code = self.nbodycode(self.converter,
                                        number_of_workers=self.ngpu, mode='gpu')
