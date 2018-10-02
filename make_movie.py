@@ -77,13 +77,16 @@ class cluster_animator(object):
         # data = np.array([this_x_data, this_y_data])
         scat.set_offsets(np.c_[this_x_data, this_y_data])
         scat.set_sizes(this_mass)
+        t = self.snapshots[frame]['time']
+        self.ax.set_title("{:.2f}".format(t))
         return (scat,)
 
     def __call__(self):
         self.animation = FuncAnimation(self.fig, self._animate_,
                                        np.arange(self.start, self.end),
                                        fargs=[self.scat],
-                                       interval=1000.0/self.fps)
+                                       interval=1000.0/self.fps,
+                                       blit=False)
         self.animation.save(self.fileout, dpi=600)
 
 
