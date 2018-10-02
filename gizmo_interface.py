@@ -393,12 +393,12 @@ class gizmo_interface(object):
         all_softening = np.concatenate((star_softening, dark_softening, gas_softening))
 
         # figure out which particles to exclude
-        rmag = np.linalg.norm(all_position, axis=1)
-        keys = np.where(rmag < self.Rmax)[0]
+        # rmag = np.linalg.norm(all_position, axis=1)
+        # keys = np.where(rmag < self.Rmax)[0]
 
-        r = all_position[keys]
-        m = all_mass[keys]
-        soft = all_softening[keys]
+        r = all_position
+        m = all_mass
+        soft = all_softening
 
         print('constructing tree for gravity calculation')
         tree = ConstructKDTree( np.float64(r), np.float64(m), np.float64(soft))
