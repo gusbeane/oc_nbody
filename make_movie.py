@@ -73,8 +73,10 @@ class cluster_animator(object):
     def _animate_(self, frame, scat):
         this_x_data = self.snapshots[frame]['position'][:, self._xaxis_key_]
         this_y_data = self.snapshots[frame]['position'][:, self._yaxis_key_]
+        this_mass = self.snapshots[frame]['mass']
         # data = np.array([this_x_data, this_y_data])
         scat.set_offsets(np.c_[this_x_data, this_y_data])
+        scat.set_sizes(this_mass)
         return (scat,)
 
     def __call__(self):
