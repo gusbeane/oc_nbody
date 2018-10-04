@@ -289,14 +289,19 @@ class gizmo_interface(object):
 
         # TODO clean up this section
 
-        # if user specified to calc a snapshot's grid, then do so, dump to cache, and quit
-        snap_indices = np.array([self.snapshots[i].snapshot['index'] for i in range(len(self.snapshots))])
+        # if user specified to calc a snapshot's grid, then do so,
+        # dump to cache, and quit
+        snap_indices = np.array([self.snapshots[i].snapshot['index']
+                                 for i in range(len(self.snapshots))])
         if grid_snapshot is not None:
-
-            snap_cache_name, snap_cache_file = self._grid_cache_name_(grid_snapshot)
-            snap_cache_file_x = snap_cache_file.replace('snapshot', 'snapshot_x')
-            snap_cache_file_y = snap_cache_file.replace('snapshot', 'snapshot_y')
-            snap_cache_file_z = snap_cache_file.replace('snapshot', 'snapshot_z')
+            snap_cache_name, snap_cache_file = \
+                self._grid_cache_name_(grid_snapshot)
+            snap_cache_file_x = snap_cache_file.replace('snapshot',
+                                                        'snapshot_x')
+            snap_cache_file_y = snap_cache_file.replace('snapshot',
+                                                        'snapshot_y')
+            snap_cache_file_z = snap_cache_file.replace('snapshot',
+                                                        'snapshot_z')
 
             print('generating snapshot grid for this file:')
             print(snap_cache_name)
@@ -308,12 +313,15 @@ class gizmo_interface(object):
 
             self.grid.gen_evolved_grid(position)
 
-            this_snapshot_grid_x, this_snapshot_grid_y, this_snapshot_grid_z = \
+            this_snapshot_grid_x, this_snapshot_grid_y, this_snapshot_grid_z =\
                 self._populate_grid_acceleration_(snap, self.grid)
 
-            pickle.dump(this_snapshot_grid_x, open(snap_cache_file_x, 'wb'), protocol=4)
-            pickle.dump(this_snapshot_grid_y, open(snap_cache_file_y, 'wb'), protocol=4)
-            pickle.dump(this_snapshot_grid_z, open(snap_cache_file_z, 'wb'), protocol=4)
+            pickle.dump(this_snapshot_grid_x, open(snap_cache_file_x, 'wb'),
+                        protocol=4)
+            pickle.dump(this_snapshot_grid_y, open(snap_cache_file_y, 'wb'),
+                        protocol=4)
+            pickle.dump(this_snapshot_grid_z, open(snap_cache_file_z, 'wb'),
+                        protocol=4)
             print('done, will quit now...')
             sys.exit(0)
 
@@ -483,20 +491,27 @@ class gizmo_interface(object):
     def _get_pot_rbfi_(self, x, y, z):
         # returns the rbfi interpolator
         # using the user defined number of points, basis, and order
-        dist, ids = self.grid._grid_evolved_kdtree_.query([x,y,z], self.nclose)
-        rbfi = RBFInterpolant(self.grid.evolved_grid[ids], self.grid.evolved_potential[ids], basis=self.basis, order=self.order)
+        dist, ids = self.grid._grid_evolved_kdtree_.query([x, y, z],
+                                                          self.nclose)
+        rbfi = RBFInterpolant(self.grid.evolved_grid[ids],
+                              self.grid.evolved_potential[ids],
+                              basis=self.basis, order=self.order)
         return rbfi
 
     def _get_acc_rbfi_(self, x, y, z):
         # returns the rbfi interpolator
         # using the user defined number of points, basis, and order
-        dist, ids = self.grid._grid_evolved_kdtree_.query([x,y,z], self.nclose)
-        rbfi_x = RBFInterpolant(self.grid.evolved_grid[ids], self.grid.evolved_acceleration_x[ids],\
-            basis=self.basis, order=self.order)
-        rbfi_y = RBFInterpolant(self.grid.evolved_grid[ids], self.grid.evolved_acceleration_y[ids],\
-            basis=self.basis, order=self.order)
-        rbfi_z = RBFInterpolant(self.grid.evolved_grid[ids], self.grid.evolved_acceleration_z[ids],\
-            basis=self.basis, order=self.order)
+        dist, ids = self.grid._grid_evolved_kdtree_.query([x, y, z],
+                                                          self.nclose)
+        rbfi_x = RBFInterpolant(self.grid.evolved_grid[ids],
+                                self.grid.evolved_acceleration_x[ids],
+                                basis=self.basis, order=self.order)
+        rbfi_y = RBFInterpolant(self.grid.evolved_grid[ids],
+                                self.grid.evolved_acceleration_y[ids],
+                                basis=self.basis, order=self.order)
+        rbfi_z = RBFInterpolant(self.grid.evolved_grid[ids],
+                                self.grid.evolved_acceleration_z[ids],
+                                basis=self.basis, order=self.order)
         return rbfi_x, rbfi_y, rbfi_z
 
     def get_gravity_at_point(self, eps, xlist, ylist, zlist):
@@ -505,15 +520,15 @@ class gizmo_interface(object):
         ylist = ylist.value_in(units.kpc)
         zlist = zlist.value_in(units.kpc)
 
-        if hasattr(xlist,'__iter__'):
+        if hasattr(xlist, '__iter__'):
             axlist = []
             aylist = []
             azlist = []
-            for x,y,z in zip(xlist,ylist,zlist):
-                rbfi_x, rbfi_y, rbfi_z = self._get_acc_rbfi_(x,y,z)
-                axlist.append( float(rbfi_x( [[x,y,z]] )) )
-                aylist.append( float(rbfi_y( [[x,y,z]] )) )
-                azlist.append( float(rbfi_z( [[x,y,z]] )) )
+            for x, y, z in zip(xlist, ylist, zlist):
+                rbfi_x, rbfi_y, rbfi_z = self._get_acc_rbfi_(x, y, z)
+                axlist.append(float(rbfi_x([[x, y, z]])))
+                aylist.append(float(rbfi_y([[x, y, z]])))
+                azlist.append(float(rbfi_z([[x, y, z]])))
             # UNCOMMENT THIS WHEN IMPLEMENT AMUSE
             ax = axlist | units.kms/units.Myr
             ay = aylist | units.kms/units.Myr
@@ -529,14 +544,18 @@ class gizmo_interface(object):
             return ax, ay, az
 
     def _init_starting_star_(self):
-        self.chosen_position_z0, self.chosen_index_z0, self.chosen_id = self.starting_star(
-                            self.ss_Rmin, self.ss_Rmax, self.ss_zmin, self.ss_zmax,
-                            self.ss_agemin_in_Gyr, self.ss_agemax_in_Gyr, self.ss_seed)
+        self.chosen_position_z0, self.chosen_index_z0, self.chosen_id = \
+                            self.starting_star(self.ss_Rmin, self.ss_Rmax,
+                                               self.ss_zmin, self.ss_zmax,
+                                               self.ss_agemin_in_Gyr,
+                                               self.ss_agemax_in_Gyr,
+                                               self.ss_seed)
 
-    def starting_star(self, Rmin, Rmax, zmin, zmax, agemin_in_Gyr, agemax_in_Gyr, seed=1776):
+    def starting_star(self, Rmin, Rmax, zmin, zmax, agemin_in_Gyr,
+                      agemax_in_Gyr, seed=1776):
         if self.ss_id is not None:
             pos = self.first_snapshot['star'].prop('host.distance.principal')
-            chosen_one = np.where(self.first_snapshots['star']['id'] ==\
+            chosen_one = np.where(self.first_snapshots['star']['id'] == \
                                   self.ss_id)[0]
             return pos[chosen_one], chosen_one, self.ss_id
 
@@ -546,7 +565,7 @@ class gizmo_interface(object):
         pos = self.first_snapshot['star'].prop('host.distance.principal')
         # vel = self.first_snapshot['star'].prop('host.velocity.principal')
 
-        Rstar = np.sqrt(pos[:,0]*pos[:,0] + pos[:,1]*pos[:,1])
+        Rstar = np.sqrt(pos[:, 0] * pos[:, 0] + pos[:, 1] * pos[:, 1])
         zstar = pos[:,2]
 
         agebool = np.logical_and(starages > agemin_in_Gyr,
