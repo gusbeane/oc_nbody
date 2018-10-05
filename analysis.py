@@ -1,3 +1,5 @@
+import matplotlib; matplotlib.use('agg')
+
 import agama
 import gizmo_analysis as gizmo
 import numpy as np
@@ -6,10 +8,12 @@ import numpy as np
 class agama_wrapper(object):
     def __init__(self, opt):
         opt.set_options(self)
+        agama.setUnits(mass=1, length=1, velocity=1)
 
-    def update_index(self, index, chosen_id=None):
+    def update_index(self, index, ss_id=None):
+        agama.setUnits(mass=1, length=1, velocity=1)
         self.current_index = index
-        self.chosen_id = chosen_id
+        self.ss_id = ss_id
         snap = gizmo.io.Read.read_snapshots(['star', 'gas', 'dark'],
                                             'index', index,
                                             properties=['id', 'position',
@@ -39,21 +43,23 @@ class agama_wrapper(object):
                                     Rmax=50, Zmin=0.02, Zmax=10)
         self.potential = agama.Potential(self.pdark, self.pbar)
 
-        if chosen_id is not None:
+        if ss_id is not None:
             self.ss_init = True
-            chosen_key = np.where(snap['star']['id'] == self.chosen_id)[0]
+            ss_key = np.where(snap['star']['id'] == self.ss_id)[0]
             self.chosen_position = snap['star'].prop(
-                'host.distance.principal')[chosen_key]
+                'host.distance.principal')[ss_key]
             self.chosen_velocity = snap['star'].prop(
-                'host.velocity.principal')[chosen_key]
+                'host.velocity.principal')[ss_key]
         else:
             self.ss_init = False
 
         self.af = agama.ActionFinder(self.potential, interp=False)
 
-    def actions(self, poslist, vlist, add_ss=False):
+    def actions(self, poslist, vlist, add_ss=False, in_kpc=False):
+        if not in_kpc:
+            poslist /= 1000.0
         if add_ss:
-            if ~self.ss_init:
+            if not self.ss_init:
                 raise Exception('need to initialize with a ss id to add \
                                  ss pos, vel')
             else:
@@ -61,3 +67,10 @@ class agama_wrapper(object):
                 vlist = np.add(vlist, self.chosen_velocity)
         points = np.c_[poslist, vlist]
         return self.af(points)
+
+
+if __name__ == '__main__':
+    from oceanic.options import options_reader
+    import sys
+    opt = options_reader(sys.argv[1])
+    ag = agama_wrapper(opt)
