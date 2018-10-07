@@ -12,18 +12,26 @@ class oc_code(object):
         # self.N, self.W0, self.Mcluster, self.Rcluster, self.ncpu
         # self.gpu_enabled, self.ngpu, self.softening
 
-        self.converter = nbody_system.nbody_to_si(self.Mcluster | units.MSun,
-                                                  self.Rcluster | units.parsec)
-        self.bodies = new_king_model(self.N, self.W0,
-                                     convert_nbody=self.converter)
         if self.use_kroupa is True:
-            self.bodies.mass = \
-                new_kroupa_mass_distribution(self.N,
+            m = new_kroupa_mass_distribution(self.N,
                                              self.kroupa_max | units.MSun)
-            # rescale velocities to be in virial equilibrium
-            self.bodies.scale_to_standard(convert_nbody=self.converter)
+            tot_m = np.sum(m.value_in(units.MSun))
+            self.converter = \
+                nbody_system.nbody_to_si(tot_m | units.MSun,
+                                         self.Rcluster | units.parsec)
 
-        self.bodies.move_to_center()
+            self.bodies = new_king_model(self.N, self.W0,
+                                         convert_nbody=self.converter)
+            self.bodies.mass = m
+            self.bodies.scale_to_standard(convert_nbody=self.converter)
+            self.bodies.move_to_center()
+        else:
+            self.converter = \
+                nbody_system.nbody_to_si(self.Mcluster | units.MSun,
+                                         self.Rcluster | units.parsec)
+
+            self.bodies = new_king_model(self.N, self.W0,
+                                         convert_nbody=self.converter)
 
         if self.gpu_enabled:
             self.code = self.nbodycode(self.converter,
