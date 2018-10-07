@@ -15,7 +15,7 @@ timestep = 0.1 ; timestep for cluster integrati
 write_frequency = 50 ; how often to write cluster snapshot to disk (default: 10)
 
 [simulation]
-simulation_directory = /mnt/ceph/users/firesims/fire2/core/m12i_res7100/
+simulation_directory = /mnt/ceph/users/firesims/fire2/metaldiff/m12i_res7100/
 cache_directory = /mnt/ceph/users/abeane/oc_nbody/cache/
 startnum = 580      ; first snapshot index (where the oc sim starts)
 endnum = 585        ; last snapshot index
