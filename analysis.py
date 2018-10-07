@@ -10,25 +10,32 @@ class agama_wrapper(object):
         opt.set_options(self)
         agama.setUnits(mass=1, length=1, velocity=1)
 
-    def update_index(self, index, ss_id=None):
+    def update_index(self, index, ss_id=None, snap=None):
         agama.setUnits(mass=1, length=1, velocity=1)
         self.current_index = index
         self.ss_id = ss_id
-        snap = gizmo.io.Read.read_snapshots(['star', 'gas', 'dark'],
-                                            'index', index,
-                                            properties=['id', 'position',
-                                                        'velocity', 'mass',
-                                                        'form.scalefactor'],
+        if snap is not None:
+            self.snap = snap
+        else:
+            self.snap = gizmo.io.Read.read_snapshots(['star', 'gas', 'dark'],
+                                                     'index', index,
+                                                     properties=['id',
+                                                                 'position',
+                                                                 'velocity',
+                                                                 'mass',
+                                                                 'form.scale⁠factor'],
                                             simulation_directory=
                                             self.simulation_directory,
                                             assign_principal_axes=True)
-        star_position = snap['star'].prop('host.distance.principal')
-        gas_position = snap['gas'].prop('host.distance.principal')
-        dark_position = snap['dark'].prop('host.distance.principal')
+        star_position = self.snap['star'].prop('host.distance.principal')
+        gas_position = self.snap['gas'].prop('host.distance.principal')
+        dark_position = self.snap['dark'].prop('host.distance.principal')
 
-        star_mass = snap['star']['mass']
-        gas_mass = snap['gas']['mass']
-        dark_mass = snap['dark']['mass']
+        star_mass = self.snap['star']['mass']
+        gas_mass = self.snap['gas']['mass']
+        dark_mass = self.snap['dark']['mass']
+
+
 
         position = np.concatenate((star_position, gas_position))
         mass = np.concatenate((star_mass, gas_mass))
