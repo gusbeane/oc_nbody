@@ -52,15 +52,23 @@ class agama_wrapper(object):
 
         if ss_id is not None:
             self.ss_init = True
-            ss_key = np.where(snap['star']['id'] == self.ss_id)[0]
-            self.chosen_position = snap['star'].prop(
+            ss_key = np.where(self.snap['star']['id'] == self.ss_id)[0]
+            self.chosen_position = self.snap['star'].prop(
                 'host.distance.principal')[ss_key]
-            self.chosen_velocity = snap['star'].prop(
+            self.chosen_velocity = self.snap['star'].prop(
                 'host.velocity.principal')[ss_key]
         else:
             self.ss_init = False
 
         self.af = agama.ActionFinder(self.potential, interp=False)
+
+    def update_ss(self, ss_id):
+        self.ss_init = True
+        ss_key = np.where(self.snap['star']['id'] == ss_id)[0]
+        self.chosen_position = self.snap['star'].prop(
+            'host.distance.principal')[ss_key]
+        self.chosen_velocity = self.snap['star'].prop(
+            'host.velocity.principal')[ss_key]
 
     def actions(self, poslist, vlist, add_ss=False, in_kpc=False):
         if not in_kpc:
