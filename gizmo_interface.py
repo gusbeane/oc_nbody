@@ -285,6 +285,12 @@ class gizmo_interface(object):
         self.grid = grid(self.grid_x_size_in_kpc, self.grid_y_size_in_kpc, self.grid_z_size_in_kpc,
                             self.grid_resolution)
 
+        if self.fine_grid:
+            self.grid.add_fine_grid(self.grid_fine_x_size_in_kpc,
+                                    self.grid_fine_y_size_in_kpc,
+                                    self.grid_fine_z_size_in_kpc,
+                                    self.grid_fine_resolution)
+
         self.grid.snapshot_acceleration_x = []
         self.grid.snapshot_acceleration_y = []
         self.grid.snapshot_acceleration_z = []

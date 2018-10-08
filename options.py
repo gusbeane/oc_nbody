@@ -110,7 +110,9 @@ class options_reader(object):
                          'Rmax', 'theta',
                          'grid_x_size_in_kpc', 'grid_y_size_in_kpc',
                          'grid_z_size_in_kpc', 'grid_resolution', 'kroupa_max',
-                         'Jr_min', 'Jr_max', 'Jz_min', 'Jz_max']
+                         'Jr_min', 'Jr_max', 'Jz_min', 'Jz_max',
+                         'grid_fine_x_size_in_kpc', 'grid_fine_y_size_in_kpc',
+                         'grid_fine_z_size_in_kpc', 'grid_fine_resolution']
         for opt in float_options:
             if opt in self.options.keys():
                 self.options[opt] = float(self.options[opt])
