@@ -25,6 +25,10 @@ num_prior = 3       ; the number of snapshots loaded before the first snapshot (
 star_softening_in_pc = 11.2 ; star softening [pc]
 dark_softening_in_pc = 112.0 ; dark softening [pc]
 
+# optionally specify characteristic mass, overrides star_softening_in_pc
+# see paper for details
+star_char_mass = 0.5 ; characteristic softening mass [Msun]
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # NOTE: the best choice for softening lengths is NOT necessarily the  #
 # softening lengths in the original simulation!                       #

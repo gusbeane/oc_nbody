@@ -400,11 +400,20 @@ class gizmo_interface(object):
                 snap['dark']['mass'],
                 snap['gas']['mass']))
 
+        # set star softening
+        if self.star_char_mass is not None:
+            star_mass = snap['star']['mass']
+            star_softening = np.power(star_mass/self.star_char_mass, 1.0/3.0)
+            star_softening /= 1000.0
+        else:
+            star_softening = np.full(len(snap['star']['position']),
+                            float(self.star_softening_in_pc)/1000.0)[ss_key]
+
         gas_softening = 2.8 * snap['gas']['smooth.length'] / 1000.0
-        star_softening = np.full(len(snap['star']['position']),
-            float(self.star_softening_in_pc)/1000.0)[ss_key]
         dark_softening = np.full(len(snap['dark']['position']),
             float(self.dark_softening_in_pc)/1000.0)
+
+        print('star softening:', star_softening[:10])
 
         all_softening = np.concatenate((star_softening, dark_softening, gas_softening))
 
