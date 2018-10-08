@@ -63,6 +63,13 @@ class options_reader(object):
         self._read_optional_option_('starting_star', 'ss_seed', '1776')
         self._read_optional_option_('starting_star', 'ss_id', None)
 
+        self._read_optional_option_('starting_star', 'ss_action_cuts', 'false')
+        self.options['ss_action_cuts'] =\
+            self._convert_bool_(self.options['ss_action_cuts'])
+        if self.options['ss_action_cuts']:
+            for opt in ['Jr_min', 'Jr_max', 'Jz_min', 'Jz_max']:
+                self._read_required_option_('starting_star', opt)
+
         ss_array = [self.options['ss_Rmin'], self.options['ss_Rmax'],
                     self.options['ss_zmin'], self.options['ss_zmax']]
 
@@ -102,7 +109,8 @@ class options_reader(object):
                          'star_softening_in_pc', 'dark_softening_in_pc',
                          'Rmax', 'theta',
                          'grid_x_size_in_kpc', 'grid_y_size_in_kpc',
-                         'grid_z_size_in_kpc', 'grid_resolution', 'kroupa_max']
+                         'grid_z_size_in_kpc', 'grid_resolution', 'kroupa_max',
+                         'Jr_min', 'Jr_max', 'Jz_min', 'Jz_max']
         for opt in float_options:
             if opt in self.options.keys():
                 self.options[opt] = float(self.options[opt])

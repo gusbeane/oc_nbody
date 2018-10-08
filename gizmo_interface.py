@@ -8,6 +8,7 @@ from rbf.interpolate import RBFInterpolant
 from oceanic.grid_cartesian import grid
 from amuse.units import units
 from oceanic.options import options_reader
+from oceanic.analysis import agama_wrapper
 import pickle
 
 from pykdgrav import ConstructKDTree, GetAccelParallel
@@ -68,6 +69,7 @@ class gizmo_interface(object):
         self.kpc_in_km = 3.08567758E16
         # opt = options_reader(options_file)
         options_reader.set_options(self)
+        self.options_reader = options_reader
 
         print(self.star_softening_in_pc)
 
@@ -417,11 +419,11 @@ class gizmo_interface(object):
         accel_center = GetAccelParallel(np.array([grid.ss_evolved_position]), tree, self.G, self.theta)[0]
 
         # remove total acceleration of frame, which we are NOT trying to capture
-        accel[:,0] = np.subtract(accel[:,0], accel_center[0])
-        accel[:,1] = np.subtract(accel[:,1], accel_center[1])
-        accel[:,2] = np.subtract(accel[:,2], accel_center[2])
+        accel[:, 0] = np.subtract(accel[:, 0], accel_center[0])
+        accel[:, 1] = np.subtract(accel[:, 1], accel_center[1])
+        accel[:, 2] = np.subtract(accel[:, 2], accel_center[2])
 
-        return accel[:,0], accel[:,1], accel[:,2]
+        return accel[:, 0], accel[:, 1], accel[:, 2]
 
     def _init_potential_grid_interpolators_(self):
         self.grid.grid_pot_interpolators = []
@@ -553,33 +555,55 @@ class gizmo_interface(object):
 
     def starting_star(self, Rmin, Rmax, zmin, zmax, agemin_in_Gyr,
                       agemax_in_Gyr, seed=1776):
-        if self.ss_id is not None:
+            if self.ss_id is not None:
+                pos = self.first_snapshot['star'].prop('host.distance.principal')
+                chosen_one = np.where(self.first_snapshot['star']['id'] == \
+                                      self.ss_id)[0]
+                return pos[chosen_one], chosen_one, self.ss_id
+
+            np.random.seed(seed)
+
+            starages = self.first_snapshot['star'].prop('age')
             pos = self.first_snapshot['star'].prop('host.distance.principal')
-            chosen_one = np.where(self.first_snapshots['star']['id'] == \
-                                  self.ss_id)[0]
-            return pos[chosen_one], chosen_one, self.ss_id
+            # vel = self.first_snapshot['star'].prop('host.velocity.principal')
 
-        np.random.seed(seed)
+            Rstar = np.sqrt(pos[:, 0] * pos[:, 0] + pos[:, 1] * pos[:, 1])
+            zstar = pos[:, 2]
 
-        starages = self.first_snapshot['star'].prop('age')
-        pos = self.first_snapshot['star'].prop('host.distance.principal')
-        # vel = self.first_snapshot['star'].prop('host.velocity.principal')
+            agebool = np.logical_and(starages > agemin_in_Gyr,
+                                     starages < agemax_in_Gyr)
+            Rbool = np.logical_and(Rstar > Rmin, Rstar < Rmax)
+            zbool = np.logical_and(zstar > zmin, zstar < zmax)
 
-        Rstar = np.sqrt(pos[:, 0] * pos[:, 0] + pos[:, 1] * pos[:, 1])
-        zstar = pos[:,2]
+            totbool = np.logical_and(np.logical_and(agebool, Rbool), zbool)
+            keys = np.where(totbool)[0]
 
-        agebool = np.logical_and(starages > agemin_in_Gyr,
-                                 starages < agemax_in_Gyr)
-        Rbool = np.logical_and(Rstar > Rmin, Rstar < Rmax)
-        zbool = np.logical_and(zstar > zmin, zstar < zmax)
+            if self.ss_action_cuts:
+                np.random.seed(seed)
+                starages = self.first_snapshot['star'].prop('age')[keys]
+                pos = self.first_snapshot['star'].prop('host.distance.principal')[keys]
+                self.first_ag = agama_wrapper(self.options_reader)
+                self.first_ag.update_index(self.startnum, snap=self.first_snapshot)
+                for ss_id in np.random.permutation(self.first_snapshot['star']['id'][keys]):
+                    self.first_ag.update_ss(ss_id)
+                    self.chosen_actions = self.first_ag.ss_action()
+                    print(self.chosen_actions)
+                    Jr = self.chosen_actions[0]
+                    Jz = self.chosen_actions[1]
+                    # Lz = self.chosen_actions[2]
+                    Jrbool = Jr > self.Jr_min and Jr < self.Jr_max
+                    Jzbool = Jz > self.Jz_min and Jz < self.Jz_max
+                    if Jrbool and Jzbool:
+                        pos = self.first_snapshot['star'].\
+                                prop('host.distance.principal')
+                        chosen_one = np.where(self.first_snapshot['star']['id']
+                                              == ss_id)[0]
+                        return pos[chosen_one], chosen_one, ss_id
 
-        totbool = np.logical_and(np.logical_and(agebool, Rbool), zbool)
-        keys = np.where(totbool)[0]
-
-        chosen_one = np.random.choice(keys)
-        chosen_id = self.first_snapshot['star']['id'][chosen_one]
-        # return pos[chosen_one], vel[chosen_one], chosen_one, chosen_id
-        return pos[chosen_one], chosen_one, chosen_id
+            chosen_one = np.random.choice(keys)
+            chosen_id = self.first_snapshot['star']['id'][chosen_one]
+            # return pos[chosen_one], vel[chosen_one], chosen_one, chosen_id
+            return pos[chosen_one], chosen_one, chosen_id
 
 
 if __name__ == '__main__':

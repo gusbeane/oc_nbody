@@ -70,6 +70,12 @@ ss_agemax_in_Gyr = 1 ; max age for ss (default: 1) [Gyr]
 # ss_id = 12354
 # can also provide ss_id, will override Rmin, Rmax, etc...
 
+ss_action_cuts = true ; can specify to make cuts based on actions (default: false)
+Jr_min = 0.0 ; minimum Jr [kpc km/s]
+Jr_max = 6.0 ; maximum Jr [kpc km/s]
+Jz_min = 0.0 ; minimum Jz [kpc km/s]
+Jz_max = 6.0 ; maximum Jz [kpc km/s]
+
 [grid]
 # see paper for explanation of x, y
 grid_x_size_in_kpc = 0.6 ; size of grid in "x" direction [kpc]
