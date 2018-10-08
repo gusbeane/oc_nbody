@@ -81,7 +81,11 @@ class agama_wrapper(object):
                 poslist = np.add(poslist, self.chosen_position)
                 vlist = np.add(vlist, self.chosen_velocity)
         points = np.c_[poslist, vlist]
-        return self.af(points)
+        return self.af(points) # Jr, Jz, Lz
+
+    def ss_action(self):
+        points = np.c_[self.chosen_position, self.chosen_velocity]
+        return self.af(points)[0]
 
 
 if __name__ == '__main__':
