@@ -8,7 +8,7 @@ import gizmo_analysis as gizmo
 import numpy as np
 
 import sys
-
+import dill
 
 
 class agama_wrapper(object):
@@ -99,7 +99,7 @@ class snapshot_action_calculator(object):
         opt.set_options(self)
         self._ag_ = agama_wrapper(opt)
         try:
-            self.cluster = np.load(snapshot_file)
+            self.cluster = dill.load(open(snapshot_file, 'rb'))
         except:
             raise Exception('could not find snapshot file: ', snapshot_file)
 

@@ -19,11 +19,11 @@ def evolve_cluster_in_galaxy(options_file):
     tend = opt.options['tend']  # in Myr
     times = np.arange(0.0, tend, timestep) | units.Myr
 
-    snap_reader = snapshot_reader(opt)
-
     cluster = oc_code(opt)
     cluster_code = cluster.code
     galaxy_code = gizmo_interface(opt)
+
+    snap_reader = snapshot_reader(opt, galaxy_code.chosen_id)
 
     stars = cluster_code.particles.copy()
 
