@@ -23,13 +23,12 @@ class agama_wrapper(object):
         if snap is not None:
             self.snap = snap
         else:
-            self.snap = gizmo.io.Read.read_snapshots(['star', 'gas', 'dark'],
-                                                     'index', index,
-                                                     properties=['id',
-                                                                 'position',
-                                                                 'velocity',
-                                                                 'mass',
-                                                                 'form.scale⁠factor'],
+            self.snap = \
+                gizmo.io.Read.read_snapshots(['star', 'gas', 'dark'],
+                                              'index', index,
+                                              properties=['id', 'position',
+                                                          'velocity', 'mass',
+                                                          'form.scalefactor'],
                                             simulation_directory=
                                             self.simulation_directory,
                                             assign_principal_axes=True)
@@ -92,6 +91,86 @@ class agama_wrapper(object):
     def ss_action(self):
         points = np.c_[self.chosen_position, self.chosen_velocity]
         return self.af(points)[0]
+
+
+class snapshot_action_calculator(object):
+    def __init__(self, options, snapshot_file='cluster_snapshots.npy',
+                 ss_id = None):
+        opt.set_options(self)
+        self._ag_ = agama_wrapper(opt)
+        try:
+            self.cluster = np.load(snapshot_file)
+        except:
+            raise Exception('could not find snapshot file: ', snapshot_file)
+
+        if ss_id is None:
+            raise Exception('please specify ss id')
+        self.ss_id = ss_id
+
+    def scroll_actions(self, start=None, end=None):
+        # start, end are int's describing where to start and ending
+        # if both are None, will scroll through all snapshots where
+        # snapshot_file spans
+        #
+        # If start is an int and end is None, will just do start index
+        # If both are not None, will go from start to end (make sure
+        # snapshot_file spans what you want actions from)
+
+        if start is None and end is None:
+            self.snapshot_indices = list(range(self.startnum,
+                                               self.endnum+1))
+            self.start = self.snapshot_indices[0]
+            self.end = self.snapshot_indices[-1]
+        elif start is not None and end is None:
+            self.snapshot_indices = (start,)
+            self.start = start
+            self.end = end
+        elif start is not None and end is not None:
+            self.snapshot_indices = list(range(start, end+1))
+            self.start = start
+            self.end = end
+        else:
+            raise Exception('invalid start and end combination')
+
+        self.first_snap = \
+            gizmo.io.Read.read_snapshots(['star', 'gas', 'dark'],
+                                          'index', self.startnum,
+                                         properties=['id', 'position',
+                                                     'velocity', 'mass',
+                                                     'form.scalefactor'],
+                                         simulation_directory=
+                                         self.simulation_directory,
+                                         assign_principal_axes=True)
+
+        self.first_time_in_Myr = self.first_snap.snapshot['time'] * 1000.0
+
+        cluster_times = np.array([self.cluster[i]['time'] for i in
+                                    range(len(self.cluster))])
+
+        for i,idx in enumerate(self.snapshot_indices):
+
+
+            if idx==self.start:
+                self._ag_.update_index(idx, ss_id=self.ss_id,
+                                       snap=self.first_snap)
+            else:
+                self._ag_.update_index(idx, ss_id=self.ss_id)
+
+            current_time = self._ag_.snap.snapshot['time'] * 1000.0
+            current_time -= self.first_time_in_Myr
+            diff_time = np.abs(cluster_times - current_time)
+
+            if np.min(diff_time) > 1.5 * self.timestep:
+                # this means we've gone past the end of the run
+                break
+
+            cluster_key = np.argmin(diff_time)
+            cl = self.cluster[cluster_key]
+
+            actions = self._ag_.actions(cl['position'], cl['velocity'],
+                                         add_ss=True)
+            self.cluster[cluster_key]['actions'] = actions
+            np.save('cluster_snapshots_actions.npy', self.cluster)
 
 class cluster_animator(object):
     def __init__(self, snapshots, xaxis='x', yaxis='y',
@@ -174,8 +253,16 @@ class cluster_animator(object):
                                        blit=False)
         self.animation.save(self.fileout, dpi=600)
 
-
+"""
 if __name__ == '__main__':
     from oceanic.options import options_reader
     opt = options_reader(sys.argv[1])
     ag = agama_wrapper(opt)
+"""
+
+if __name__ == '__main__':
+    from oceanic.options import options_reader
+    opt = options_reader(sys.argv[1])
+    ss_id = int(sys.argv[2])
+    cl_act = snapshot_action_calculator(opt, ss_id=ss_id)
+    cl_act.scroll_actions()
