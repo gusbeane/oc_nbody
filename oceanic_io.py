@@ -22,7 +22,9 @@ class snapshot_reader(object):
         self.frames.meta['simulation_directory'] = galaxy_code.simulation_directory
 
     def process_snapshot(self, system, galaxy_code, i, time, final=None):
-        self.frames.append(self._grab_frame_(system, galaxy_code, time))
+        f = self._grab_frame_(system, galaxy_code, time)
+        self.frames = meta_array(np.append(self.frames, f), **self.frames.meta)
+        # self.frames.append(self._grab_frame_(system, galaxy_code, time))
         if np.mod(i, self.write_frequency) == 0:
             fout = self.output_directory+'/cluster_snapshots.p'
             dill.dump(self.frames, open(fout, 'wb'))
