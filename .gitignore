@@ -9,3 +9,4 @@ update.sh
 cache*
 test_nokroupa
 test_oldkroupa
+.vscode
