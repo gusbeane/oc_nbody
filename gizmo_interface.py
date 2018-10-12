@@ -560,6 +560,7 @@ class gizmo_interface(object):
             az = float(rbfi_z([[xlist, ylist, zlist]])) | units.kms/units.Myr
             return ax, ay, az
 
+    # TODO clean up starting star
     def _init_starting_star_(self):
         self.chosen_position_z0, self.chosen_index_z0, self.chosen_id = \
                             self.starting_star(self.ss_Rmin, self.ss_Rmax,

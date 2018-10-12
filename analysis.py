@@ -20,40 +20,52 @@ class agama_wrapper(object):
         agama.setUnits(mass=1, length=1, velocity=1)
         self.current_index = index
         self.ss_id = ss_id
+
         if snap is not None:
             self.snap = snap
         else:
             self.snap = \
                 gizmo.io.Read.read_snapshots(['star', 'gas', 'dark'],
                                               'index', index,
-                                              properties=['id', 'position',
-                                                          'velocity', 'mass',
-                                                          'form.scalefactor'],
-                                            simulation_directory=
-                                            self.simulation_directory,
-                                            assign_principal_axes=True)
-        star_position = self.snap['star'].prop('host.distance.principal')
-        gas_position = self.snap['gas'].prop('host.distance.principal')
-        dark_position = self.snap['dark'].prop('host.distance.principal')
+                                             properties=['id', 'position',
+                                                         'velocity', 'mass',
+                                                         'form.scalefactor'],
+                                             simulation_directory=
+                                             self.simulation_directory,
+                                             assign_principal_axes=True)
 
-        star_mass = self.snap['star']['mass']
-        gas_mass = self.snap['gas']['mass']
-        dark_mass = self.snap['dark']['mass']
+        if self.sim_name is None:
+            self.sim_name = head['simulation.name'].replace(" ", "_")
+
+        potential_cache_file = self.cache_directory + '/potential_id'+str(index)
+        potential_cache_file += '_' + self.sim_name + '_pot'
+        try:
+            self.potential = agama.Potential(file=potential_cache_file)
+        except:
+            star_position = self.snap['star'].prop('host.distance.principal')
+            gas_position = self.snap['gas'].prop('host.distance.principal')
+            dark_position = self.snap['dark'].prop('host.distance.principal')
+
+            star_mass = self.snap['star']['mass']
+            gas_mass = self.snap['gas']['mass']
+            dark_mass = self.snap['dark']['mass']
 
 
 
-        position = np.concatenate((star_position, gas_position))
-        mass = np.concatenate((star_mass, gas_mass))
+            position = np.concatenate((star_position, gas_position))
+            mass = np.concatenate((star_mass, gas_mass))
 
-        self.pdark = agama.Potential(type="Multipole",
-                                     particles=(dark_position, dark_mass),
-                                     symmetry='a', gridsizeR=20, lmax=2)
-        self.pbar = agama.Potential(type="CylSpline",
-                                    particles=(position, mass),
-                                    gridsizer=20, gridsizez=20,
-                                    mmax=0, Rmin=0.2,
-                                    Rmax=50, Zmin=0.02, Zmax=10)
-        self.potential = agama.Potential(self.pdark, self.pbar)
+            #TODO make these user-controllable
+            self.pdark = agama.Potential(type="Multipole",
+                                        particles=(dark_position, dark_mass),
+                                        symmetry='a', gridsizeR=20, lmax=2)
+            self.pbar = agama.Potential(type="CylSpline",
+                                        particles=(position, mass),
+                                        gridsizer=20, gridsizez=20,
+                                        mmax=0, Rmin=0.2,
+                                        Rmax=50, Zmin=0.02, Zmax=10)
+            self.potential = agama.Potential(self.pdark, self.pbar)
+            self.potential.export(potential_cache_file)
 
         if ss_id is not None:
             self.ss_init = True
