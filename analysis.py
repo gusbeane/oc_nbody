@@ -35,6 +35,9 @@ class agama_wrapper(object):
                                              assign_principal_axes=True)
 
         if self.sim_name is None:
+            head = gizmo.io.Read.read_header(snapshot_value=self.startnum,
+                                             simulation_directory=
+                                             self.simulation_directory)
             self.sim_name = head['simulation.name'].replace(" ", "_")
 
         potential_cache_file = self.cache_directory + '/potential_id'+str(index)
