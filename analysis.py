@@ -113,7 +113,7 @@ class agama_wrapper(object):
 
 
 class snapshot_action_calculator(object):
-    def __init__(self, options, snapshot_file='cluster_snapshots.npy',
+    def __init__(self, options, snapshot_file='cluster_snapshots.p',
                  ss_id = None):
         options.set_options(self)
         self._ag_ = agama_wrapper(options)
