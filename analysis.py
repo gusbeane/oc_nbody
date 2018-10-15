@@ -10,6 +10,10 @@ import numpy as np
 import sys
 import dill
 
+#from oceanic.gizmo_interface import gizmo_interface
+from oceanic.options import options_reader
+from amuse.units import units
+from tqdm import tqdm
 
 class agama_wrapper(object):
     def __init__(self, opt):
@@ -26,7 +30,7 @@ class agama_wrapper(object):
         else:
             self.snap = \
                 gizmo.io.Read.read_snapshots(['star', 'gas', 'dark'],
-                                              'index', index,
+                                             'index', index,
                                              properties=['id', 'position',
                                                          'velocity', 'mass',
                                                          'form.scalefactor'],
@@ -111,8 +115,8 @@ class agama_wrapper(object):
 class snapshot_action_calculator(object):
     def __init__(self, options, snapshot_file='cluster_snapshots.npy',
                  ss_id = None):
-        opt.set_options(self)
-        self._ag_ = agama_wrapper(opt)
+        options.set_options(self)
+        self._ag_ = agama_wrapper(options)
         try:
             self.cluster = dill.load(open(snapshot_file, 'rb'))
         except:
@@ -186,6 +190,7 @@ class snapshot_action_calculator(object):
                                          add_ss=True)
             self.cluster[cluster_key]['actions'] = actions
             np.save('cluster_snapshots_actions.npy', self.cluster)
+
 
 class cluster_animator(object):
     def __init__(self, snapshots, xaxis='x', yaxis='y',
@@ -269,16 +274,117 @@ class cluster_animator(object):
                                        blit=False)
         self.animation.save(self.fileout, dpi=600)
 
+
+class acceleration_heatmap(object):
+    def __init__(self, options_file, interface):
+        self.opt = options_reader(options_file)
+        self.interface = interface
+
+    def __call__(self, t_in_Myr, return_heatmap=False,
+                 xcenter=0.0, ycenter=0.0, clim_min=-0.1, clim_max=0.1,
+                 plot_xmin=-0.1, plot_xmax=0.1,
+                 plot_ymin=-0.1, plot_ymax=0.1,
+                 log=False, components=True, nres=360, zval=0.05,
+                 output_file=None, cmap='YlGnBu', comp_cmap='bwr_r'):
+                 # return_heatmap specifies to not plot but rather just
+                 # return the heatmaps (used above)
+                 # xcenter, ycenter are where the frame is centered
+                 # clim_min, clim_max specify min and max values for
+                 # color map
+                 # plot_xmin, ... specify plot bounds
+                 # log specifies whether to plot log(acc)
+                 # note - will plot log(|acc_x|) for components
+                 # components - return components in addition to tot acc
+                 # output_file - if None, will make up a file name
+                 # for components I will do 'x_' + output_file, etc...
+                 # cmap - for tot acc, comp_cmap - for components
+        if output_file is None:
+            if log:
+                output_file = 'logacc_'
+            else:
+                output_file = 'acc_'
+            output_file += 'xc' + str(xcenter) + '_yc' + str(ycenter)
+            output_file += '_cmin' + str(clim_min) + '_cmax' + str(clim_max)
+            output_file += '_plxmin' + str(plot_xmin) + '_plxmax' + str(plot_xmax)
+            output_file += '_plymin' + str(plot_ymin) + '_plymax' + str(plot_ymax)
+            output_file += '_nres' + str(nres) + '_zval' + str(zval) + '.pdf'
+
+        if components:
+            output_file_x = 'x_' + output_file
+            output_file_y = 'y_' + output_file
+            output_file_z = 'z_' + output_file
+
+        self.interface.evolve_model(t_in_Myr | units.Myr)
+        extent = [plot_xmin, plot_xmax, plot_ymin, plot_ymax]
+        xlist = np.linspace(xcenter + plot_xmin, xcenter + plot_xmax, nres)
+        ylist = np.linspace(ycenter + plot_ymin, ycenter + plot_ymax, nres)
+
+        if components:
+            heatmapx = np.zeros((nres, nres))
+            heatmapy = np.zeros((nres, nres))
+            heatmapz = np.zeros((nres, nres))
+        heatmap = np.zeros((nres, nres))
+
+        for i,x in enumerate(tqdm(xlist)):
+            print('got to:', i)
+            for j,y in enumerate(ylist):
+                acc = self.interface.get_gravity_at_point(0 | units.kpc,
+                    x | units.kpc, y | units.kpc, zval | units.kpc)
+                acc = np.array([acc[i].value_in(units.kms/units.Myr) for i in range(3)])
+                if components:
+                    heatmapx[j][i] = acc[0]
+                    heatmapy[j][i] = acc[1]
+                    heatmapz[j][i] = acc[2]
+                heatmap[j][i] = np.linalg.norm(acc)
+
+        if log:
+            heatmapx = np.log10(np.abs(heatmapx))
+            heatmapy = np.log10(np.abs(heatmapy))
+            heatmapz = np.log10(np.abs(heatmapz))
+            heatmap = np.log10(np.abs(heatmap))
+
+        if return_heatmap:
+            if components:
+                return heatmap, heatmapx, heatmapy, heatmapz
+            else:
+                return heatmap
+
+        self._plot_(heatmap, extent, t_in_Myr,
+                    output_file, log, cmap, 0.0, clim_max)
+        self._plot_(heatmapx, extent, t_in_Myr,
+                    output_file_x, log, comp_cmap, clim_min, clim_max)
+        self._plot_(heatmapy, extent, t_in_Myr,
+                    output_file_y, log, comp_cmap, clim_min, clim_max)
+        self._plot_(heatmapz, extent, t_in_Myr,
+                    output_file_z, log, comp_cmap, clim_min, clim_max)
+
+    def _plot_(self, heatmap, extent, t, out, log, cmap, clim_min, clim_max):
+        plt.imshow(heatmap, extent=extent, origin='lower', cmap=cmap,
+                   vmin=clim_min, vmax=clim_max)
+        if log:
+            plt.colorbar(label='log10(acc) [ km/s/Myr ]')
+        else:
+            plt.colorbar(label='acc [ km/s/Myr ]')
+        plt.xlabel('x [kpc]')
+        plt.ylabel('y [kpc]')
+        plt.xlim(extent[0], extent[1])
+        plt.ylim(extent[2], extent[3])
+        plt.title("{:10.2f}".format(t) + ' Myr')
+        plt.savefig(out)
+        plt.close()
+
+
 """
 if __name__ == '__main__':
     from oceanic.options import options_reader
     opt = options_reader(sys.argv[1])
     ag = agama_wrapper(opt)
 """
-
+"""
 if __name__ == '__main__':
     from oceanic.options import options_reader
     opt = options_reader(sys.argv[1])
     ss_id = int(sys.argv[2])
     cl_act = snapshot_action_calculator(opt, ss_id=ss_id)
     cl_act.scroll_actions()
+"""
