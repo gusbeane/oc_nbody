@@ -222,6 +222,7 @@ class cluster_animator(object):
         first_mass = self.snapshots[self.start]['mass']
 
         self.fig, self.ax = plt.subplots(1)
+        self.ax.axis('equal')
         self.scat = self.ax.scatter(first_x, first_y, s=first_mass)
 
         self.ax.set_xlim(xmin, xmax)
