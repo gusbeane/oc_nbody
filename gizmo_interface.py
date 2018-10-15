@@ -565,6 +565,45 @@ class gizmo_interface(object):
             az = float(rbfi_z([[xlist, ylist, zlist]])) | units.kms/units.Myr
             return ax, ay, az
 
+    def get_tidal_tensor_at_point(self, eps, xlist, ylist, zlist):
+        # UNCOMMENT THIS WHEN IMPLEMENT AMUSE
+        xlist = xlist.value_in(units.kpc)
+        ylist = ylist.value_in(units.kpc)
+        zlist = zlist.value_in(units.kpc)
+
+        if hasattr(xlist, '__iter__'):
+            Tlist = []
+            for x, y, z in zip(xlist, ylist, zlist):
+                rbfi_x, rbfi_y, rbfi_z = self._get_acc_rbfi_(x, y, z)
+                Txx = float(rbfi_x([[x, y, z]], diff=(1, 0, 0)))
+                Tyy = float(rbfi_y([[x, y, z]], diff=(0, 1, 0)))
+                Tzz = float(rbfi_z([[x, y, z]], diff=(0, 0, 1)))
+                Txy = float(rbfi_y([[x, y, z]], diff=(1, 0, 0)))
+                Tyx = float(rbfi_x([[x, y, z]], diff=(0, 1, 0)))
+                Txz = float(rbfi_z([[x, y, z]], diff=(1, 0, 0)))
+                Tzx = float(rbfi_x([[x, y, z]], diff=(0, 0, 1)))
+                Tyz = float(rbfi_z([[x, y, z]], diff=(0, 1, 0)))
+                Tzy = float(rbfi_y([[x, y, z]], diff=(0, 0, 1)))
+                T = [[Txx, Txy, Txz], [Tyx, Tyy, Tyz], [Tzx, Tzy, Tzz]]
+                Tlist.append(T)
+            # UNCOMMENT THIS WHEN IMPLEMENT AMUSE
+            return Tlist | units.kms/units.Myr/units.kpc
+
+        else:
+            rbfi_x, rbfi_y, rbfi_z = self._get_acc_rbfi_(xlist, ylist, zlist)
+            # UNCOMMENT THIS WHEN IMPLEMENT AMUSE
+            Txx = float(rbfi_x([[xlist, ylist, zlist]], diff=(1, 0, 0)))
+            Tyy = float(rbfi_y([[xlist, ylist, zlist]], diff=(0, 1, 0)))
+            Tzz = float(rbfi_z([[xlist, ylist, zlist]], diff=(0, 0, 1)))
+            Txy = float(rbfi_y([[xlist, ylist, zlist]], diff=(1, 0, 0)))
+            Tyx = float(rbfi_x([[xlist, ylist, zlist]], diff=(0, 1, 0)))
+            Txz = float(rbfi_z([[xlist, ylist, zlist]], diff=(1, 0, 0)))
+            Tzx = float(rbfi_x([[xlist, ylist, zlist]], diff=(0, 0, 1)))
+            Tyz = float(rbfi_z([[xlist, ylist, zlist]], diff=(0, 1, 0)))
+            Tzy = float(rbfi_y([[xlist, ylist, zlist]], diff=(0, 0, 1)))
+            T = [[Txx, Txy, Txz], [Tyx, Tyy, Tyz], [Tzx, Tzy, Tzz]]
+            return T | units.kms/units.Myr/units.kpc
+
     # TODO clean up starting star
     def _init_starting_star_(self):
         self.chosen_position_z0, self.chosen_index_z0, self.chosen_id = \
