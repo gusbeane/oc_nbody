@@ -409,13 +409,18 @@ class gizmo_interface(object):
             star_softening = np.full(len(snap['star']['position']),
                             float(self.star_softening_in_pc)/1000.0)[ss_key]
 
+        if self.dark_char_mass is not None:
+            dark_mass = snap['dark']['mass']
+            dark_softening = np.power(dark_mass/self.dark_char_mass, 1.0/3.0)
+            dark_softening /= 1000.0
+        else:
+            dark_softening = np.full(len(snap['dark']['position']),
+                float(self.dark_softening_in_pc)/1000.0)
+
         gas_softening = 2.8 * snap['gas']['smooth.length'] / 1000.0
-        dark_softening = np.full(len(snap['dark']['position']),
-            float(self.dark_softening_in_pc)/1000.0)
 
-        print('star softening:', star_softening[:10])
-
-        all_softening = np.concatenate((star_softening, dark_softening, gas_softening))
+        all_softening = np.concatenate((star_softening, dark_softening,
+                                        gas_softening))
 
         # figure out which particles to exclude
         # rmag = np.linalg.norm(all_position, axis=1)

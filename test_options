@@ -27,7 +27,8 @@ dark_softening_in_pc = 112.0 ; dark softening [pc]
 
 # optionally specify characteristic mass, overrides star_softening_in_pc
 # see paper for details
-star_char_mass = 0.5 ; characteristic softening mass [Msun]
+star_char_mass = 0.048 ; characteristic softening mass [Msun]
+# dark_char_mass = 0.048
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # NOTE: the best choice for softening lengths is NOT necessarily the  #
