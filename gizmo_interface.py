@@ -142,6 +142,12 @@ class gizmo_interface(object):
                                       self.endnum+1)
         self.initial_key = self.num_prior
 
+        # # # # # # # # # # # # # # # # # # # # # # #
+        #                                           #
+        #           Read in snapshots               #
+        #                                           #
+        # # # # # # # # # # # # # # # # # # # # # # #
+
         init = self.snapshot_indices[0]
         fin = self.snapshot_indices[-1]
         cache_name = 'snapshots_' + self.sim_name + '_start' + str(init)
@@ -174,6 +180,39 @@ class gizmo_interface(object):
                 self.snapshots[i] = self._clean_Rmag_(self.snapshots[i])
 
             pickle.dump(self.snapshots, open(cache_file, 'wb'), protocol=4)
+
+        # # # # # # # # # # # # # # # # # # # # # # #
+        #                                           #
+        # Read in velocities of only star particles #
+        #                                           #
+        # # # # # # # # # # # # # # # # # # # # # # #
+
+        cache_name = 'star_vel_' + self.sim_name + '_start' + str(init)
+        cache_name += '_end' + str(fin) + '_first' + str(self.startnum)
+        cache_name += '_Rmag' + str(self.Rmax) + '.p'
+        cache_file = self.cache_directory + '/' + cache_name
+
+        try:
+            self.star_snapshots = pickle.load(open(cache_file, 'rb'))
+            print('found and loaded cached file for star velocities:')
+            print(cache_name)
+        except:
+            print('couldnt find cached file for star velocities:')
+            print(cache_name)
+            print('constructing...')
+            self.star_snapshots =\
+                gizmo.io.Read.read_snapshots(['star'],
+                                             'index', self.snapshot_indices,
+                                             properties=['velocity', 'id',
+                                                         'position'],
+                                             simulation_directory=
+                                             self.simulation_directory,
+                                             assign_center=False)
+
+            for snap in self.star_snapshots:
+                self._assign_self_center_(snap)
+
+            pickle.dump(self.star_snapshots, open(cache_file, 'wb'), protocol=4)
 
         # store some relevant data
         self.time_in_Myr = self._time_in_Myr_()
@@ -226,21 +265,20 @@ class gizmo_interface(object):
         self.chosen_indices = [int(np.where(self.snapshots[i]['star']['id'] == self.chosen_id)[0]) for i in range(len(self.snapshots)) ]
         self.chosen_snapshot_positions = [self.snapshots[i]['star'].prop('host.distance.principal')\
                     [self.chosen_indices[i]] for i in range(len(self.snapshots))]
-        # self.chosen_snapshot_velocities = [self.snapshots[i]['star'].prop('host.velocity.principal')\
-                    # [self.chosen_indices[i]] for i in range(len(self.snapshots))]
+        self.chosen_snapshot_velocities = [self.star_snapshots[i]['star'].prop('host.velocity.principal')\
+                    [self.chosen_indices[i]] for i in range(len(self.snapshots))]
 
         self.chosen_indices = np.array(self.chosen_indices)
         self.chosen_snapshot_positions = np.array(self.chosen_snapshot_positions)
-        # self.chosen_snapshot_velocities = np.array(self.chosen_snapshot_velocities)
+        self.chosen_snapshot_velocities = np.array(self.chosen_snapshot_velocities)
 
         self.chosen_pos_interp = self._gen_pos_or_vel_interpolator_(self.chosen_snapshot_positions)
-        # self.chosen_vel_interp = self._gen_pos_or_vel_interpolator_(self.chosen_snapshot_velocities)
+        self.chosen_vel_interp = self._gen_pos_or_vel_interpolator_(self.chosen_snapshot_velocities)
 
     def _gen_pos_or_vel_interpolator_(self, pos_or_vel):
         interpolators = np.zeros(3).tolist()
         for i in range(3):
             interpolators[i] = interpolate.splrep(self.time_in_Myr, pos_or_vel[:,i])
-            #interpolators[i][j] = interpolate.splrep(self.time_in_Myr, self.position_array[i][j], k=1)
         return interpolators
 
     def _grid_cache_name_(self, snapshot_index=None):
@@ -505,10 +543,10 @@ class gizmo_interface(object):
 
     def _evolve_starting_star_(self, time_in_Myr):
         self.chosen_evolved_position = [float(interpolate.splev(time_in_Myr, self.chosen_pos_interp[i])) for i in range(3)]
-        # self.chosen_evolved_velocity = [float(interpolate.splev(time_in_Myr, self.chosen_vel_interp[i])) for i in range(3)]
+        self.chosen_evolved_velocity = [float(interpolate.splev(time_in_Myr, self.chosen_vel_interp[i])) for i in range(3)]
 
         self.chosen_evolved_position = np.array(self.chosen_evolved_position)
-        # self.chosen_evolved_velocity = np.array(self.chosen_evolved_velocity)
+        self.chosen_evolved_velocity = np.array(self.chosen_evolved_velocity)
 
     def _get_pot_rbfi_(self, x, y, z):
         # returns the rbfi interpolator

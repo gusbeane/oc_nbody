@@ -48,15 +48,15 @@ class snapshot_reader(object):
         velocity = np.transpose([vx, vy, vz])
 
         chosen_position = galaxy_code.chosen_evolved_position * 1000.0
-        # chosen_velocity = galaxy_code.chosen_evolved_velocity
+        chosen_velocity = galaxy_code.chosen_evolved_velocity
 
         time = time.value_in(units.Myr)
 
         frame = {'time': time,
                  'position': position,
                  'velocity': velocity,
+                 'mass': mass,
                  'chosen_position': chosen_position,
-                 'mass': mass}
-        # 'chosen_velocity': chosen_velocity}
+                 'chosen_velocity': chosen_velocity}
 
         return frame
