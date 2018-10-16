@@ -195,9 +195,12 @@ class snapshot_action_calculator(object):
 class cluster_animator(object):
     def __init__(self, snapshots, xaxis='x', yaxis='y',
                  xmin=-10, xmax=10, ymin=-10, ymax=10,
-                 start=None, end=None, fps=30, fileout=None):
+                 start=None, end=None, fps=30, fileout=None,
+                 mass_max=None):
 
         self.snapshots = snapshots
+
+        self.mass_max = mass_max
 
         self.xaxis = xaxis
         self.yaxis = yaxis
@@ -240,7 +243,10 @@ class cluster_animator(object):
         if fileout is None:
             self.fileout = 'movie_' + self.xaxis + '_' + str(self.xmin)
             self.fileout += '_' + str(self.xmax) + '_' + self.yaxis + '_'
-            self.fileout += str(self.ymin) + '_' + str(self.ymax) + '.mp4'
+            self.fileout += str(self.ymin) + '_' + str(self.ymax)
+            if self.mass_max is not None:
+                self.fileout += '_massmax' + str(self.mass_max)
+            self.fileout += '.mp4'
         else:
             self.fileout = fileout
 
@@ -259,6 +265,11 @@ class cluster_animator(object):
         this_x_data = self.snapshots[frame]['position'][:, self._xaxis_key_]
         this_y_data = self.snapshots[frame]['position'][:, self._yaxis_key_]
         this_mass = self.snapshots[frame]['mass']
+        if self.mass_max is not None:
+            keys = np.where(this_mass < self.mass_max)[0]
+            this_x_data = this_x_data[keys]
+            this_y_data = this_y_data[keys]
+            this_mass = this_mass[keys]
         # data = np.array([this_x_data, this_y_data])
         scat.set_offsets(np.c_[this_x_data, this_y_data])
         scat.set_sizes(this_mass)
