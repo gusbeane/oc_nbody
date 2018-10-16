@@ -197,10 +197,10 @@ class gizmo_interface(object):
         if part.snapshot['index'] == self.startnum:
             this_center_position = self.center_position
         else:
-            snapshot_time_in_Myr = part.snapshot['time'] * 1000.0
+            snapshot_time_in_Myr = part.snapshot['time'] * 1000.0 - \
+                                   self.first_snapshot_time_in_Myr
 
-            offset = self.center_velocity
-            offset *= (snapshot_time_in_Myr - self.first_snapshot_time_in_Myr)
+            offset = self.center_velocity * snapshot_time_in_Myr
             offset *= self.convert_kms_Myr_to_kpc
 
             this_center_position = self.center_position + offset
