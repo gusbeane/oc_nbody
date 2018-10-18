@@ -99,6 +99,12 @@ class options_reader(object):
 
         if self.options['grid_fine_x_size_in_kpc'] is not None:
             self.options['fine_grid'] = True
+            self.options['grid_fine_x_size_in_kpc'] = float(self.options['grid_fine_x_size_in_kpc'])
+            self.options['grid_fine_y_size_in_kpc'] = float(self.options['grid_fine_y_size_in_kpc'])
+            self.options['grid_fine_z_size_in_kpc'] = float(self.options['grid_fine_z_size_in_kpc'])
+            self.options['grid_fine_resolution'] = float(self.options['grid_fine_resolution'])
+        else:
+            self.options['fine_grid'] = False
 
         # convert relevant parameters
         int_options = ['startnum', 'endnum', 'num_prior', 'nclose', 'order',
@@ -116,9 +122,7 @@ class options_reader(object):
                          'Rmax', 'theta',
                          'grid_x_size_in_kpc', 'grid_y_size_in_kpc',
                          'grid_z_size_in_kpc', 'grid_resolution', 'kroupa_max',
-                         'Jr_min', 'Jr_max', 'Jz_min', 'Jz_max',
-                         'grid_fine_x_size_in_kpc', 'grid_fine_y_size_in_kpc',
-                         'grid_fine_z_size_in_kpc', 'grid_fine_resolution']
+                         'Jr_min', 'Jr_max', 'Jz_min', 'Jz_max']
         for opt in float_options:
             if opt in self.options.keys():
                 self.options[opt] = float(self.options[opt])
