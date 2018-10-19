@@ -379,6 +379,8 @@ class acceleration_heatmap(object):
             output_file += '_plymin' + str(plot_ymin) + '_plymax' + str(plot_ymax)
             output_file += '_nres' + str(nres) + '_zval' + str(zval) + '.pdf'
 
+        self.components = components
+
         if components:
             output_file_x = 'x_' + output_file
             output_file_y = 'y_' + output_file
@@ -401,33 +403,26 @@ class acceleration_heatmap(object):
             cache_file_x = cache_directory + '/' + output_file_x + '_cache.p'
             cache_file_y = cache_directory + '/' + output_file_y + '_cache.p'
             cache_file_z = cache_directory + '/' + output_file_z + '_cache.p'
-            if True:
-                print(cache_file)
-                print(cache_file_x)
+            try:
                 heatmap = dill.load(open(cache_file, 'rb'))
                 if components:
                     heatmapx = dill.load(open(cache_file_x, 'rb'))
                     heatmapy = dill.load(open(cache_file_y, 'rb'))
                     heatmapz = dill.load(open(cache_file_z, 'rb'))
 
-            if False:
-                for i,x in enumerate(tqdm(xlist)):
-                    print('got to:', i)
-                    for j,y in enumerate(ylist):
-                        acc = self.interface.get_gravity_at_point(0 | units.kpc,
-                        x | units.kpc, y | units.kpc, zval | units.kpc)
-                        acc = np.array([acc[i].value_in(units.kms/units.Myr) for i in range(3)])
-                        if components:
-                            heatmapx[j][i] = acc[0]
-                            heatmapy[j][i] = acc[1]
-                            heatmapz[j][i] = acc[2]
-                        heatmap[j][i] = np.linalg.norm(acc)
-
+            except:
+                heatmap, heatmapx, heatmapy, heatmapz = \
+                    self._heatmap_(xlist, ylist, zval, heatmap, heatmapx,
+                                   heatmapy, heatmapz)
                 dill.dump(heatmap, open(cache_file, 'wb'))
                 if components:
                     dill.dump(heatmapx, open(cache_file_x, 'wb'))
                     dill.dump(heatmapy, open(cache_file_y, 'wb'))
                     dill.dump(heatmapy, open(cache_file_z, 'wb'))
+        else:
+            heatmap, heatmapx, heatmapy, heatmapz = \
+                self._heatmap_(xlist, ylist, zval, heatmap, heatmapx,
+                               heatmapy, heatmapz)
 
         if log:
             heatmapx = np.log10(np.abs(heatmapx))
@@ -449,6 +444,20 @@ class acceleration_heatmap(object):
                     output_file_y, log, comp_cmap, clim_min, clim_max)
         self._plot_(heatmapz, extent, t_in_Myr,
                     output_file_z, log, comp_cmap, clim_min, clim_max)
+
+    def _heatmap_(self, xlist, ylist, zval, heatmap, heatmapx, heatmapy, heatmapz):
+        for i,x in enumerate(tqdm(xlist)):
+            print('got to:', i)
+            for j,y in enumerate(ylist):
+                acc = self.interface.get_gravity_at_point(0 | units.kpc,
+                x | units.kpc, y | units.kpc, zval | units.kpc)
+                acc = np.array([acc[i].value_in(units.kms/units.Myr) for i in range(3)])
+                if self.components:
+                    heatmapx[j][i] = acc[0]
+                    heatmapy[j][i] = acc[1]
+                    heatmapz[j][i] = acc[2]
+                heatmap[j][i] = np.linalg.norm(acc)
+        return heatmap, heatmapx, heatmapy, heatmapz
 
     def _plot_(self, heatmap, extent, t, out, log, cmap, clim_min, clim_max):
         plt.imshow(heatmap, extent=extent, origin='lower', cmap=cmap,
