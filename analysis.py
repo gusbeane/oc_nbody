@@ -196,9 +196,16 @@ class cluster_animator(object):
     def __init__(self, snapshots, xaxis='x', yaxis='y',
                  xmin=-10, xmax=10, ymin=-10, ymax=10,
                  start=None, end=None, fps=30, fileout=None,
-                 mass_max=None):
+                 mass_max=None, acc_map=False, interface=None, options=None,
+                 nres=360, acc='tot', cmap='bwr_r', cmin=-0.5, cmax=0.5):
 
         self.snapshots = snapshots
+        self.acc_map = acc_map
+        self.acc = acc
+        self.nres = nres
+        self.cmap = cmap
+        self.cmin = cmin
+        self.cmax = cmax
 
         self.mass_max = mass_max
 
@@ -232,6 +239,30 @@ class cluster_animator(object):
         self.fig, self.ax = plt.subplots(1)
         self.ax.axis('equal')
         self.scat = self.ax.scatter(first_x, first_y, s=first_mass)
+        if acc_map:
+            if interface is None or options is None:
+                raise Exception('Please provide interface and options file')
+                sys.exit(1)
+            self.interface = interface
+            self.gen_acc_map = acceleration_heatmap(options, interface)
+            self.extent = [self.xmin, self.xmax, self.ymin, self.ymax]
+            time = self.snapshots[self.start]['time']
+            hm, hmx, hmy, hmz = self.gen_acc_map(time, return_heatmap=True,
+                            plot_xmin=self.xmin, plot_xmax=self.xmax,
+                            plot_ymin=self.ymin, plot_ymax=self.ymax,
+                            nres=self.nres, cache=True)
+            if self.acc == 'tot':
+                this_hm = hm
+            elif self.acc == 'x':
+                this_hm = hmx
+            elif self.acc == 'y':
+                this_hm = hmy
+            elif self.acc == 'z':
+                this_hm = hmz
+
+            self.im = plt.imshow(this_hm, extent=self.extent, origin='lower',
+                            vmin=self.cmin, vmax=self.cmax, cmap=self.cmap,
+                            animate=True)
 
         self.ax.set_xlim(xmin, xmax)
         self.ax.set_ylim(ymin, ymax)
@@ -261,7 +292,7 @@ class cluster_animator(object):
             raise Exception('cant recognize axis: '+axis)
             sys.exit(1)
 
-    def _animate_(self, frame, scat):
+    def _animate_(self, frame, scat, im=None):
         this_x_data = self.snapshots[frame]['position'][:, self._xaxis_key_]
         this_y_data = self.snapshots[frame]['position'][:, self._yaxis_key_]
         this_mass = self.snapshots[frame]['mass']
@@ -270,17 +301,41 @@ class cluster_animator(object):
             this_x_data = this_x_data[keys]
             this_y_data = this_y_data[keys]
             this_mass = this_mass[keys]
+
+        if self.acc_map:
+            time = self.snapshots[frame]['time']
+            hm, hmx, hmy, hmz = self.gen_acc_map(time, index=frame, return_heatmap=True,
+                            plot_xmin=self.xmin, plot_xmax=self.xmax,
+                            plot_ymin=self.ymin, plot_ymax=self.ymax,
+                            nres=self.nres, cache=True)
+            if self.acc == 'tot':
+                this_hm = hm
+            elif self.acc == 'x':
+                this_hm = hmx
+            elif self.acc == 'y':
+                this_hm = hmy
+            elif self.acc == 'z':
+                this_hm = hmz
+            im.set_array(this_hm)
+
         # data = np.array([this_x_data, this_y_data])
         scat.set_offsets(np.c_[this_x_data, this_y_data])
         scat.set_sizes(this_mass)
         t = self.snapshots[frame]['time']
         self.ax.set_title("{:.2f}".format(t))
-        return (scat,)
+        if self.acc_map:
+            return (scat, im)
+        else:
+            return (scat,)
 
     def __call__(self):
+        if self.acc_map:
+            fargs = [self.scat, self.im]
+        else:
+            fargs = [self.scat]
         self.animation = FuncAnimation(self.fig, self._animate_,
                                        np.arange(self.start, self.end),
-                                       fargs=[self.scat],
+                                       fargs=fargs,
                                        interval=1000.0/self.fps,
                                        blit=False)
         self.animation.save(self.fileout, dpi=600)
@@ -291,7 +346,7 @@ class acceleration_heatmap(object):
         self.opt = options_reader(options_file)
         self.interface = interface
 
-    def __call__(self, t_in_Myr, return_heatmap=False,
+    def __call__(self, t_in_Myr, index=None, return_heatmap=False,
                  xcenter=0.0, ycenter=0.0, clim_min=-0.1, clim_max=0.1,
                  plot_xmin=-0.1, plot_xmax=0.1,
                  plot_ymin=-0.1, plot_ymax=0.1,
@@ -314,6 +369,10 @@ class acceleration_heatmap(object):
                 output_file = 'logacc_'
             else:
                 output_file = 'acc_'
+            if index is not None:
+                output_file += 'id'+str(index)+'_'
+            else:
+                output_file += 't'+str(t_in_Myr)+'_'
             output_file += 'xc' + str(xcenter) + '_yc' + str(ycenter)
             output_file += '_cmin' + str(clim_min) + '_cmax' + str(clim_max)
             output_file += '_plxmin' + str(plot_xmin) + '_plxmax' + str(plot_xmax)
