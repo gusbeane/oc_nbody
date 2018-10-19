@@ -2,6 +2,7 @@ import matplotlib; matplotlib.use('agg')
 
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
+from amuse.units import units
 
 import agama
 import gizmo_analysis as gizmo
@@ -262,7 +263,7 @@ class cluster_animator(object):
 
             self.im = plt.imshow(this_hm, extent=self.extent, origin='lower',
                             vmin=self.cmin, vmax=self.cmax, cmap=self.cmap,
-                            animate=True)
+                            animated=True)
 
         self.ax.set_xlim(xmin, xmax)
         self.ax.set_ylim(ymin, ymax)
@@ -409,8 +410,10 @@ class acceleration_heatmap(object):
                     heatmapx = dill.load(open(cache_file_x, 'rb'))
                     heatmapy = dill.load(open(cache_file_y, 'rb'))
                     heatmapz = dill.load(open(cache_file_z, 'rb'))
+                print('found and loaded heatmap(s):', cache_file)
 
             except:
+                print('couldnt find necessary heatmap(s) at cache:', cache_file)
                 heatmap, heatmapx, heatmapy, heatmapz = \
                     self._heatmap_(xlist, ylist, zval, heatmap, heatmapx,
                                    heatmapy, heatmapz)
