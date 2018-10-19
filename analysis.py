@@ -296,7 +296,7 @@ class acceleration_heatmap(object):
                  plot_xmin=-0.1, plot_xmax=0.1,
                  plot_ymin=-0.1, plot_ymax=0.1,
                  log=False, components=True, nres=360, zval=0.05,
-                 output_file=None, cmap='YlGnBu', comp_cmap='bwr_r'):
+                 output_file=None, cmap='YlGnBu', comp_cmap='bwr_r', cache=False):
                  # return_heatmap specifies to not plot but rather just
                  # return the heatmaps (used above)
                  # xcenter, ycenter are where the frame is centered
@@ -336,17 +336,37 @@ class acceleration_heatmap(object):
             heatmapz = np.zeros((nres, nres))
         heatmap = np.zeros((nres, nres))
 
-        for i,x in enumerate(tqdm(xlist)):
-            print('got to:', i)
-            for j,y in enumerate(ylist):
-                acc = self.interface.get_gravity_at_point(0 | units.kpc,
-                    x | units.kpc, y | units.kpc, zval | units.kpc)
-                acc = np.array([acc[i].value_in(units.kms/units.Myr) for i in range(3)])
+        if cache:
+            cache_file = output_file + '_cache.p'
+            cache_file_x = output_file_x + '_cache.p'
+            cache_file_y = output_file_y + '_cache.p'
+            cache_file_z = output_file_z + '_cache.p'
+            try:
+                heatmap = dill.load(open(cache_file, 'rb'))
                 if components:
-                    heatmapx[j][i] = acc[0]
-                    heatmapy[j][i] = acc[1]
-                    heatmapz[j][i] = acc[2]
-                heatmap[j][i] = np.linalg.norm(acc)
+                    heatmapx = dill.dump(open(cache_file_x, 'rb'))
+                    heatmapy = dill.dump(open(cache_file_y, 'rb'))
+                    heatmapz = dill.dump(open(cache_file_z, 'rb'))
+
+            except:
+                for i,x in enumerate(tqdm(xlist)):
+                    print('got to:', i)
+                    for j,y in enumerate(ylist):
+                        acc = self.interface.get_gravity_at_point(0 | units.kpc,
+                        x | units.kpc, y | units.kpc, zval | units.kpc)
+                        acc = np.array([acc[i].value_in(units.kms/units.Myr) for i in range(3)])
+                        if components:
+                            heatmapx[j][i] = acc[0]
+                            heatmapy[j][i] = acc[1]
+                            heatmapz[j][i] = acc[2]
+                        heatmap[j][i] = np.linalg.norm(acc)
+
+        if cache:
+            dill.dump(heatmap, open(cache_file, 'wb'))
+            if components:
+                dill.dump(heatmapx, open(cache_file_x, 'wb'))
+                dill.dump(heatmapy, open(cache_file_y, 'wb'))
+                dill.dump(heatmapy, open(cache_file_z, 'wb'))
 
         if log:
             heatmapx = np.log10(np.abs(heatmapx))
