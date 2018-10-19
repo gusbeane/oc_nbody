@@ -396,18 +396,11 @@ class acceleration_heatmap(object):
         heatmap = np.zeros((nres, nres))
 
         if cache:
-<<<<<<< HEAD
             cache_directory = self.interface.cache_directory
             cache_file = cache_directory + '/' + output_file + '_cache.p'
             cache_file_x = cache_directory + '/' + output_file_x + '_cache.p'
             cache_file_y = cache_directory + '/' + output_file_y + '_cache.p'
             cache_file_z = cache_directory + '/' + output_file_z + '_cache.p'
-=======
-            cache_file = self.cache_directory + '/' + output_file + '_cache.p'
-            cache_file_x = self.cache_directory + '/' + output_file_x + '_cache.p'
-            cache_file_y = self.cache_directory + '/' + output_file_y + '_cache.p'
-            cache_file_z = self.cache_directory + '/' + output_file_z + '_cache.p'
->>>>>>> 44199f1d2a6eae9951593c977c47ee328f95822e
             if True:
                 print(cache_file)
                 print(cache_file_x)
