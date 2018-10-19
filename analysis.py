@@ -420,12 +420,11 @@ class acceleration_heatmap(object):
                             heatmapz[j][i] = acc[2]
                         heatmap[j][i] = np.linalg.norm(acc)
 
-        if cache:
-            dill.dump(heatmap, open(cache_file, 'wb'))
-            if components:
-                dill.dump(heatmapx, open(cache_file_x, 'wb'))
-                dill.dump(heatmapy, open(cache_file_y, 'wb'))
-                dill.dump(heatmapy, open(cache_file_z, 'wb'))
+                dill.dump(heatmap, open(cache_file, 'wb'))
+                if components:
+                    dill.dump(heatmapx, open(cache_file_x, 'wb'))
+                    dill.dump(heatmapy, open(cache_file_y, 'wb'))
+                    dill.dump(heatmapy, open(cache_file_z, 'wb'))
 
         if log:
             heatmapx = np.log10(np.abs(heatmapx))
