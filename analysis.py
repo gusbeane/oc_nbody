@@ -400,14 +400,14 @@ class acceleration_heatmap(object):
             cache_file_x = output_file_x + '_cache.p'
             cache_file_y = output_file_y + '_cache.p'
             cache_file_z = output_file_z + '_cache.p'
-            try:
+            if True:
                 heatmap = dill.load(open(cache_file, 'rb'))
                 if components:
                     heatmapx = dill.load(open(cache_file_x, 'rb'))
                     heatmapy = dill.load(open(cache_file_y, 'rb'))
                     heatmapz = dill.load(open(cache_file_z, 'rb'))
 
-            except:
+            if False:
                 for i,x in enumerate(tqdm(xlist)):
                     print('got to:', i)
                     for j,y in enumerate(ylist):
