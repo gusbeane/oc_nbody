@@ -396,11 +396,13 @@ class acceleration_heatmap(object):
         heatmap = np.zeros((nres, nres))
 
         if cache:
-            cache_file = output_file + '_cache.p'
-            cache_file_x = output_file_x + '_cache.p'
-            cache_file_y = output_file_y + '_cache.p'
-            cache_file_z = output_file_z + '_cache.p'
+            cache_file = self.cache_directory + '/' + output_file + '_cache.p'
+            cache_file_x = self.cache_directory + '/' + output_file_x + '_cache.p'
+            cache_file_y = self.cache_directory + '/' + output_file_y + '_cache.p'
+            cache_file_z = self.cache_directory + '/' + output_file_z + '_cache.p'
             if True:
+                print(cache_file)
+                print(cache_file_x)
                 heatmap = dill.load(open(cache_file, 'rb'))
                 if components:
                     heatmapx = dill.load(open(cache_file_x, 'rb'))
