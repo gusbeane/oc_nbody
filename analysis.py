@@ -403,9 +403,9 @@ class acceleration_heatmap(object):
             try:
                 heatmap = dill.load(open(cache_file, 'rb'))
                 if components:
-                    heatmapx = dill.dump(open(cache_file_x, 'rb'))
-                    heatmapy = dill.dump(open(cache_file_y, 'rb'))
-                    heatmapz = dill.dump(open(cache_file_z, 'rb'))
+                    heatmapx = dill.load(open(cache_file_x, 'rb'))
+                    heatmapy = dill.load(open(cache_file_y, 'rb'))
+                    heatmapz = dill.load(open(cache_file_z, 'rb'))
 
             except:
                 for i,x in enumerate(tqdm(xlist)):
