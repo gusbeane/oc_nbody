@@ -247,7 +247,7 @@ class cluster_animator(object):
             self.gen_acc_map = acceleration_heatmap(options, interface)
             self.extent = [self.xmin, self.xmax, self.ymin, self.ymax]
             time = self.snapshots[self.start]['time']
-            hm, hmx, hmy, hmz = self.gen_acc_map(time, return_heatmap=True,
+            hm, hmx, hmy, hmz = self.gen_acc_map(time, index=self.start, return_heatmap=True,
                             plot_xmin=self.xmin, plot_xmax=self.xmax,
                             plot_ymin=self.ymin, plot_ymax=self.ymax,
                             nres=self.nres, cache=True)
