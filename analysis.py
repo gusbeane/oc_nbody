@@ -295,7 +295,7 @@ class acceleration_heatmap(object):
                  xcenter=0.0, ycenter=0.0, clim_min=-0.1, clim_max=0.1,
                  plot_xmin=-0.1, plot_xmax=0.1,
                  plot_ymin=-0.1, plot_ymax=0.1,
-                 log=False, components=True, nres=360, zval=0.05,
+                 log=False, components=True, nres=360, zval=0.0,
                  output_file=None, cmap='YlGnBu', comp_cmap='bwr_r', cache=False):
                  # return_heatmap specifies to not plot but rather just
                  # return the heatmaps (used above)
