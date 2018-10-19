@@ -387,7 +387,6 @@ class acceleration_heatmap(object):
             output_file_y = 'y_' + output_file
             output_file_z = 'z_' + output_file
 
-        self.interface.evolve_model(t_in_Myr | units.Myr)
         extent = [plot_xmin, plot_xmax, plot_ymin, plot_ymax]
         xlist = np.linspace(xcenter + plot_xmin, xcenter + plot_xmax, nres)
         ylist = np.linspace(ycenter + plot_ymin, ycenter + plot_ymax, nres)
@@ -414,6 +413,7 @@ class acceleration_heatmap(object):
 
             except:
                 print('couldnt find necessary heatmap(s) at cache:', cache_file)
+                self.interface.evolve_model(t_in_Myr | units.Myr)
                 heatmap, heatmapx, heatmapy, heatmapz = \
                     self._heatmap_(xlist, ylist, zval, heatmap, heatmapx,
                                    heatmapy, heatmapz)
@@ -423,6 +423,7 @@ class acceleration_heatmap(object):
                     dill.dump(heatmapy, open(cache_file_y, 'wb'))
                     dill.dump(heatmapy, open(cache_file_z, 'wb'))
         else:
+            self.interface.evolve_model(t_in_Myr | units.Myr)
             heatmap, heatmapx, heatmapy, heatmapz = \
                 self._heatmap_(xlist, ylist, zval, heatmap, heatmapx,
                                heatmapy, heatmapz)
