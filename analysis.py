@@ -194,7 +194,7 @@ class snapshot_action_calculator(object):
 
 class cluster_animator(object):
     def __init__(self, snapshots, xaxis='x', yaxis='y',
-                 xmin=-10, xmax=10, ymin=-10, ymax=10,
+                 xmin=-0.01, xmax=0.01, ymin=-0.01, ymax=0.01,
                  start=None, end=None, fps=30, fileout=None,
                  mass_max=None, acc_map=False, interface=None, options=None,
                  nres=360, acc='tot', cmap='bwr_r', cmin=-0.5, cmax=0.5):
@@ -293,8 +293,8 @@ class cluster_animator(object):
             sys.exit(1)
 
     def _animate_(self, frame, scat, im=None):
-        this_x_data = self.snapshots[frame]['position'][:, self._xaxis_key_]
-        this_y_data = self.snapshots[frame]['position'][:, self._yaxis_key_]
+        this_x_data = self.snapshots[frame]['position'][:, self._xaxis_key_]/1000.0
+        this_y_data = self.snapshots[frame]['position'][:, self._yaxis_key_]/1000.0
         this_mass = self.snapshots[frame]['mass']
         if self.mass_max is not None:
             keys = np.where(this_mass < self.mass_max)[0]
