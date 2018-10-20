@@ -506,7 +506,9 @@ class gizmo_interface(object):
                     interpolate.splrep(self.time_in_Myr, self.grid.snapshot_acceleration_y[:,i]))
             self.grid.grid_accz_interpolators.append(
                     interpolate.splrep(self.time_in_Myr, self.grid.snapshot_acceleration_z[:,i]))
+        self._init_acceleration_pool_()
 
+    def _init_acceleration_pool_(self):
         global acc_pool
         acc_pool = Pool(processes=self.ncpu,
                         initializer=init_worker,
