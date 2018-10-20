@@ -704,6 +704,14 @@ class gizmo_interface(object):
             # return pos[chosen_one], vel[chosen_one], chosen_one, chosen_id
             return pos[chosen_one], chosen_one, chosen_id
 
+    def __getstate__(self):
+        self_dict = self.__dict__.copy()
+        del self_dict['acc_pool']
+        return self_dict
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+
 
 if __name__ == '__main__':
     options_file = sys.argv[1]
