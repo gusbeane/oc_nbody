@@ -509,8 +509,7 @@ class gizmo_interface(object):
         self._init_acceleration_pool_()
 
     def _init_acceleration_pool_(self):
-        global acc_pool
-        acc_pool = Pool(processes=self.ncpu,
+        self.acc_pool = Pool(processes=self.ncpu,
                         initializer=init_worker,
                         initargs=(self.grid.grid_accx_interpolators,
                                   self.grid.grid_accy_interpolators,
@@ -518,13 +517,13 @@ class gizmo_interface(object):
 
     def _execute_acceleration_grid_interpolators_(self, t):
         evolved_acceleration_x =\
-            acc_pool.starmap(run_worker_x, [(t, i) for i in
+            self.acc_pool.starmap(run_worker_x, [(t, i) for i in
                              range(len(self.grid.grid_accx_interpolators))])
         evolved_acceleration_y =\
-            acc_pool.starmap(run_worker_y, [(t, i) for i in
+            self.acc_pool.starmap(run_worker_y, [(t, i) for i in
                              range(len(self.grid.grid_accy_interpolators))])
         evolved_acceleration_z =\
-            acc_pool.starmap(run_worker_z, [(t, i) for i in
+            self.acc_pool.starmap(run_worker_z, [(t, i) for i in
                              range(len(self.grid.grid_accz_interpolators))])
 
         self.grid.evolved_acceleration_x = np.array(evolved_acceleration_x)
