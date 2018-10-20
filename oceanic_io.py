@@ -71,6 +71,6 @@ def dump_interface(interface, fileout='interface.p'):
 
 def load_interface(filein='interface.p'):
     interface = dill.load(open(filein, 'rb'))
-    from oceanic.gizmo_interface import acc_pool, run_worker_x, run_worker_y, run_worker_z
+    from oceanic.gizmo_interface import acc_wrapper, run_worker_x, run_worker_y, run_worker_z
     interface._init_acceleration_pool_()
     return interface
