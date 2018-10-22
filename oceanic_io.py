@@ -1,6 +1,7 @@
 from amuse.units import units
 import numpy as np
 import dill
+from amuse.units import units
 
 class meta_array(np.ndarray):
     """Array with metadata."""
@@ -61,30 +62,72 @@ class snapshot_reader(object):
 
         return frame
 
-def dump_interface(interface, fileout='interface.p', skinny=True, skinny_fileout='interface_skinny.p'):
+def dump_interface(interface, directory_out='interface'):
+    directory_out = interface.output_directory + '/' + directory_out
+    if not os.path.isdir(directory_out):
+        os.makedirs(directory_out)
+    
+    # delete stuff we won't ever need again
     del interface.first_snapshot
     del interface.snapshots
     del interface.star_snapshots
     del interface.first_ag
-    dill.dump(interface, open(fileout, 'wb'))
-    if skinny:
-        del interface.grid.grid_accx_interpolators
-        del interface.grid.grid_accy_interpolators
-        del interface.grid.grid_accz_interpolators
-        dill.dump(interface, open(skinny_fileout, 'wb'))
+
+    # now dump grid piecemeal
+    dill.dump(interface.grid.evolved_grid, open(directory_out+'/evolved_grid', 'wb'))
+    dill.dump(interface.grid.init_grid, open(directory_out+'/init_grid', 'wb'))
+    del interface.grid.evolved_grid
+    del interface.grid.init_grid
+
+    dill.dump(interface.grid.grid_accx_interpolators, open(directory_out+'/grid_accx_interpolators', 'wb'))
+    dill.dump(interface.grid.grid_accy_interpolators, open(directory_out+'/grid_accy_interpolators', 'wb'))
+    dill.dump(interface.grid.grid_accz_interpolators, open(directory_out+'/grid_accz_interpolators', 'wb'))
+    del interface.grid.grid_accx_interpolators
+    del interface.grid.grid_accy_interpolators
+    del interface.grid.grid_accz_interpolators
+
+    dill.dump(interface.grid.snapshot_acceleration_x, open(directory_out+'/snapshot_acceleration_x', 'wb'))
+    dill.dump(interface.grid.snapshot_acceleration_y, open(directory_out+'/snapshot_acceleration_y', 'wb'))
+    dill.dump(interface.grid.snapshot_acceleration_z, open(directory_out+'/snapshot_acceleration_z', 'wb'))
+    del interface.grid.snapshot_acceleration_x
+    del interface.grid.snapshot_acceleration_y
+    del interface.grid.snapshot_acceleration_z
+
+    del interface.grid.evolved_acceleration_x
+    del interface.grid.evolved_acceleration_y
+    del interface.grid.evolved_acceleration_z
+
+    dill.dump(interface, open(directory_out+'/interface', 'wb'))
 
 
-def load_interface(filein=None, skinny=False):
-    if filein is None:
-        if skinny:
-            filein = 'interface_skinny.p'
-        else:
-            filein = 'interface.p'
-    interface = dill.load(open(filein, 'rb'))
-    from oceanic.gizmo_interface import acc_wrapper, run_worker_x, run_worker_y, run_worker_z
-    if skinny:
-        interface._init_acceleration_grid_interpolators_()
-    else:
-        interface._init_acceleration_pool_()
+def load_interface(directory='interface', load_snapshot_acc=False):
+    interface = dill.load(open(directory_out+'/interface', 'rb'))
+
+    if load_snapshot_acc:
+        interface.grid.snapshot_acceleration_x = dill.load(open(directory_out+'/snapshot_acceleration_x', 'rb'))
+        interface.grid.snapshot_acceleration_y = dill.load(open(directory_out+'/snapshot_acceleration_y', 'rb'))
+        interface.grid.snapshot_acceleration_z = dill.load(open(directory_out+'/snapshot_acceleration_z', 'rb'))
+
+    interface.grid.evolved_grid = dill.load(open(directory_out+'/evolved_grid', 'rb'))
+    interface.grid.init_grid = dill.load(open(directory_out+'/init_grid', 'rb'))
+
+    interface.grid.grid_accx_interpolators = dill.load(open(directory_out+'/grid_accx_interpolators', 'rb'))
+    interface.grid.grid_accy_interpolators = dill.load(open(directory_out+'/grid_accy_interpolators', 'rb'))
+    interface.grid.grid_accz_interpolators = dill.load(open(directory_out+'/grid_accz_interpolators', 'rb'))
+
+    interface._init_acceleration_pool_()
+    interface.evolve_model(0 | units.Myr)
+
+    # if filein is None:
+    #     if skinny:
+    #         filein = 'interface_skinny.p'
+    #     else:
+    #         filein = 'interface.p'
+    # interface = dill.load(open(filein, 'rb'))
+    # from oceanic.gizmo_interface import acc_wrapper, run_worker_x, run_worker_y, run_worker_z
+    # if skinny:
+    #     interface._init_acceleration_grid_interpolators_()
+    # else:
+    #     interface._init_acceleration_pool_()
 
     return interface
