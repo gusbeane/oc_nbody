@@ -66,7 +66,7 @@ def dump_interface(interface, directory_out='interface'):
     directory_out = interface.output_directory + '/' + directory_out
     if not os.path.isdir(directory_out):
         os.makedirs(directory_out)
-    
+
     # delete stuff we won't ever need again
     del interface.first_snapshot
     del interface.snapshots
@@ -101,19 +101,19 @@ def dump_interface(interface, directory_out='interface'):
 
 
 def load_interface(directory='interface', load_snapshot_acc=False):
-    interface = dill.load(open(directory_out+'/interface', 'rb'))
+    interface = dill.load(open(directory+'/interface', 'rb'))
 
     if load_snapshot_acc:
-        interface.grid.snapshot_acceleration_x = dill.load(open(directory_out+'/snapshot_acceleration_x', 'rb'))
-        interface.grid.snapshot_acceleration_y = dill.load(open(directory_out+'/snapshot_acceleration_y', 'rb'))
-        interface.grid.snapshot_acceleration_z = dill.load(open(directory_out+'/snapshot_acceleration_z', 'rb'))
+        interface.grid.snapshot_acceleration_x = dill.load(open(directory+'/snapshot_acceleration_x', 'rb'))
+        interface.grid.snapshot_acceleration_y = dill.load(open(directory+'/snapshot_acceleration_y', 'rb'))
+        interface.grid.snapshot_acceleration_z = dill.load(open(directory+'/snapshot_acceleration_z', 'rb'))
 
-    interface.grid.evolved_grid = dill.load(open(directory_out+'/evolved_grid', 'rb'))
-    interface.grid.init_grid = dill.load(open(directory_out+'/init_grid', 'rb'))
+    interface.grid.evolved_grid = dill.load(open(directory+'/evolved_grid', 'rb'))
+    interface.grid.init_grid = dill.load(open(directory+'/init_grid', 'rb'))
 
-    interface.grid.grid_accx_interpolators = dill.load(open(directory_out+'/grid_accx_interpolators', 'rb'))
-    interface.grid.grid_accy_interpolators = dill.load(open(directory_out+'/grid_accy_interpolators', 'rb'))
-    interface.grid.grid_accz_interpolators = dill.load(open(directory_out+'/grid_accz_interpolators', 'rb'))
+    interface.grid.grid_accx_interpolators = dill.load(open(directory+'/grid_accx_interpolators', 'rb'))
+    interface.grid.grid_accy_interpolators = dill.load(open(directory+'/grid_accy_interpolators', 'rb'))
+    interface.grid.grid_accz_interpolators = dill.load(open(directory+'/grid_accz_interpolators', 'rb'))
 
     interface._init_acceleration_pool_()
     interface.evolve_model(0 | units.Myr)
