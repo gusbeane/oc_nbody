@@ -87,9 +87,9 @@ def dump_interface(interface, directory_out='interface'):
     del interface.grid.grid_accy_interpolators
     del interface.grid.grid_accz_interpolators
 
-    dill.dump(interface.grid.snapshot_acceleration_x, open(directory_out+'/snapshot_acceleration_x', 'wb'))
-    dill.dump(interface.grid.snapshot_acceleration_y, open(directory_out+'/snapshot_acceleration_y', 'wb'))
-    dill.dump(interface.grid.snapshot_acceleration_z, open(directory_out+'/snapshot_acceleration_z', 'wb'))
+    dill.dump(directory_out+'/snapshot_acceleration_x.npz', interface.grid.snapshot_acceleration_x)
+    dill.dump(directory_out+'/snapshot_acceleration_y.npz', interface.grid.snapshot_acceleration_y)
+    dill.dump(directory_out+'/snapshot_acceleration_z.npz', interface.grid.snapshot_acceleration_z)
     del interface.grid.snapshot_acceleration_x
     del interface.grid.snapshot_acceleration_y
     del interface.grid.snapshot_acceleration_z
@@ -104,9 +104,9 @@ def dump_interface(interface, directory_out='interface'):
 def load_interface(directory='interface', skinny=True):
     interface = dill.load(open(directory+'/interface', 'rb'))
 
-    interface.grid.snapshot_acceleration_x = dill.load(open(directory+'/snapshot_acceleration_x', 'rb'))
-    interface.grid.snapshot_acceleration_y = dill.load(open(directory+'/snapshot_acceleration_y', 'rb'))
-    interface.grid.snapshot_acceleration_z = dill.load(open(directory+'/snapshot_acceleration_z', 'rb'))
+    interface.grid.snapshot_acceleration_x = np.load(directory+'/snapshot_acceleration_x.npz')
+    interface.grid.snapshot_acceleration_y = np.load(directory+'/snapshot_acceleration_y.npz')
+    interface.grid.snapshot_acceleration_z = np.load(directory+'/snapshot_acceleration_z.npz')
 
     interface.grid.evolved_grid = dill.load(open(directory+'/evolved_grid', 'rb'))
     interface.grid.init_grid = dill.load(open(directory+'/init_grid', 'rb'))
