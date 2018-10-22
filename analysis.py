@@ -104,7 +104,7 @@ class agama_wrapper(object):
 
     def actions(self, poslist, vlist, add_ss=False, in_kpc=False):
         if not in_kpc:
-            poslist /= 1000.0
+            poslist = poslist.copy()/1000.0
         if add_ss:
             if not self.ss_init:
                 raise Exception('need to initialize with a ss id to add \
