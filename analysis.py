@@ -7,6 +7,7 @@ from amuse.units import units
 import agama
 import gizmo_analysis as gizmo
 import numpy as np
+from tqdm import tqdm
 
 import sys
 import dill
@@ -206,7 +207,7 @@ class snapshot_action_calculator(object):
 
     def all_actions(self, fileout='cluster_snapshots_actions.p'):
         self._ag_.update_index(self.startnum, ss_id=self.ss_id)
-        for i,cl in enumerate(self.cluster):
+        for i,cl in tqdm(enumerate(self.cluster)):
             self._ag_.update_ss(self.ss_id, position=cl['chosen_position'],
                                 velocity=cl['chosen_velocity'])
             actions = self._ag_.actions(cl['position'], cl['velocity'],
