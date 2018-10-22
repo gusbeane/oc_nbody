@@ -266,12 +266,14 @@ class cluster_animator(object):
         first_mass = self.snapshots[self.start]['mass']
 
         if self.plot_panel:
-            self.ax = plt.subplot(1, 2, 1, figsize=(8, 4))
+            self.ax = plt.subplot(1, 2, 1)
             self.ax_traj = plt.subplot(2, 4, 3)
             self.ax_traj_vert = plt.subplot(2, 4, 4)
             self.ax_pJr = plt.subplot(2, 4, 7)
             self.ax_pJz = plt.subplot(2, 4, 8)
+
             self.fig = plt.gcf()
+            plt.figure(figsize=(8, 4))
 
             self.ax_pJr.set_xlim(-pLz_bound, pLz_bound)
             self.ax_pJr.set_ylim(-pJr_bound, pJr_bound)
