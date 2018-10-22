@@ -422,11 +422,11 @@ class cluster_animator(object):
             if frame == 0:
                 x = self.traj[:, 0][frame]
                 y = self.traj[:, 1][frame]
-                y = self.traj[:, 2][frame]
+                z = self.traj[:, 2][frame]
             else:
                 x = self.traj[:, 0][:frame]
                 y = self.traj[:, 1][:frame]
-                y = self.traj[:, 2][:frame]
+                z = self.traj[:, 2][:frame]
             self.traj_current.set_xdata(x)
             self.traj_current.set_ydata(y)
             self.traj_vert_current.set_xdata(x)
