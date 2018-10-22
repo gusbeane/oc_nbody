@@ -286,7 +286,7 @@ class cluster_animator(object):
             else:
                 x = self.traj[:, self._xaxis_key_][:self.start]
                 y = self.traj[:, self._yaxis_key_][:self.start]
-            self.traj_current = self.ax_traj.plot(x, y, c='k')
+            self.traj_current, = self.ax_traj.plot(x, y, c='k')
 
         else:
             self.fig, self.ax = plt.subplots(1)
