@@ -279,8 +279,14 @@ class cluster_animator(object):
                 np.array([self.snapshots[i]['chosen_position'] for i in range(len(self.snapshots))])
             self.ax_traj.plot(self.traj[:, self._xaxis_key_], self.traj[:, self._yaxis_key_],
                               c='k', alpha=0.5)
-            self.traj_current = self.ax_traj.plot([self.traj[:, self._xaxis_key_][:self.start],
-                                                  self.traj[:, self._yaxis_key_][:self.start]], c='k')
+
+            if self.start ==0:
+                x = self.traj[:, self._xaxis_key_][self.start]
+                y = self.traj[:, self._yaxis_key_][self.start]
+            else:
+                x = self.traj[:, self._xaxis_key_][:self.start]
+                y = self.traj[:, self._yaxis_key_][:self.start]
+            self.traj_current = self.ax_traj.plot(x, y, c='k')
 
         else:
             self.fig, self.ax = plt.subplots(1)
@@ -387,11 +393,15 @@ class cluster_animator(object):
         if self.plot_panel:
             this_actions = self.snapshots[frame]['actions']
             pact = self._peculiar_actions_(this_actions)
-            self.ax_pJr.set_offsets(np.c_[pact[:,2], pact[:,0]])
-            self.ax_pJz.set_offsets(np.c_[pact[:,1], pact[:,0]])
+            self.scat_pJr.set_offsets(np.c_[pact[:,2], pact[:,0]])
+            self.scat_pJz.set_offsets(np.c_[pact[:,1], pact[:,0]])
 
-            x = self.traj[:, self._xaxis_key_][:frame]
-            y = self.traj[:, self._xaxis_key_][:frame]
+            if frame == 0:
+                x = self.traj[:, self._xaxis_key_][frame]
+                y = self.traj[:, self._xaxis_key_][frame]
+            else:
+                x = self.traj[:, self._xaxis_key_][:frame]
+                y = self.traj[:, self._xaxis_key_][:frame]
             self.traj_current.set_xdata(x)
             self.traj_current.set_ydata(y)
 
