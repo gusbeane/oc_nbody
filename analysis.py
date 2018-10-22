@@ -222,7 +222,8 @@ class cluster_animator(object):
                  start=None, end=None, fps=30, fileout=None,
                  mass_max=None, acc_map=False, interface=None, options=None,
                  nres=360, acc='tot', cmap='bwr_r', cmin=-0.5, cmax=0.5,
-                 direction_arrow=False, plot_panel=False):
+                 direction_arrow=False, plot_panel=False,
+                 pLz_bound=0.3, pJr_bound=0.03, pJz_bound=0.1):
 
         self.snapshots = snapshots
         self.acc_map = acc_map
@@ -265,28 +266,48 @@ class cluster_animator(object):
         first_mass = self.snapshots[self.start]['mass']
 
         if self.plot_panel:
-            self.ax = plt.subplot(1, 2, 1)
+            self.ax = plt.subplot(1, 2, 1, figsize=(8, 4))
             self.ax_traj = plt.subplot(2, 4, 3)
+            self.ax_traj_vert = plt.subplot(2, 4, 4)
             self.ax_pJr = plt.subplot(2, 4, 7)
             self.ax_pJz = plt.subplot(2, 4, 8)
             self.fig = plt.gcf()
+
+            self.ax_pJr.set_xlim(-pLz_bound, pLz_bound)
+            self.ax_pJr.set_ylim(-pJr_bound, pJr_bound)
+            self.ax_pJr.set_xlabel('pLz')
+            self.ax_pJr.set_ylabel('pJr')
+
+            self.ax_pJz.set_xlim(-pLz_bound, pLz_bound)
+            self.ax_pJz.set_ylim(-pJz_bound, pJz_bound)
+            self.ax_pJr.set_xlabel('pLz')
+            self.ax_pJr.set_ylabel('pJz')
+
+            self.ax_traj.set_xlabel
+
             first_actions = self.snapshots[self.start]['actions']
             pecact = self._peculiar_actions_(first_actions)
-            self.scat_pJr = self.ax_pJr.scatter(pecact[:,2], pecact[:,0], s=0.5)
-            self.scat_pJz = self.ax_pJz.scatter(pecact[:,2], pecact[:,1], s=0.5)
+            self.scat_pJr = self.ax_pJr.scatter(pecact[:,2], pecact[:,0], s=0.2, c='k')
+            self.scat_pJz = self.ax_pJz.scatter(pecact[:,2], pecact[:,1], s=0.2, c='k')
 
             self.traj = \
                 np.array([self.snapshots[i]['chosen_position'] for i in range(len(self.snapshots))])
-            self.ax_traj.plot(self.traj[:, self._xaxis_key_], self.traj[:, self._yaxis_key_],
-                              c='k', alpha=0.5)
+            x = self.traj[:,0]
+            y = self.traj[:,1]
+            z = self.traj[:,2]
+            self.ax_traj.plot(x, y, c='k', alpha=0.5)
+            self.ax_traj_vert.plot(x, z, c='k', alpha=0.5)
 
             if self.start ==0:
-                x = self.traj[:, self._xaxis_key_][self.start]
-                y = self.traj[:, self._yaxis_key_][self.start]
+                x = x[self.start]
+                y = y[self.start]
+                z = z[self.start]
             else:
-                x = self.traj[:, self._xaxis_key_][:self.start]
-                y = self.traj[:, self._yaxis_key_][:self.start]
+                x = x[:self.start]
+                y = y[:self.start]
+                z = z[:self.start]
             self.traj_current, = self.ax_traj.plot(x, y, c='k')
+            self.traj_vert_current, = self.ax_traj_vert.plot(x, z, c='k')
 
         else:
             self.fig, self.ax = plt.subplots(1)
@@ -397,13 +418,17 @@ class cluster_animator(object):
             self.scat_pJz.set_offsets(np.c_[pact[:,1], pact[:,0]])
 
             if frame == 0:
-                x = self.traj[:, self._xaxis_key_][frame]
-                y = self.traj[:, self._xaxis_key_][frame]
+                x = self.traj[:, 0][frame]
+                y = self.traj[:, 1][frame]
+                y = self.traj[:, 2][frame]
             else:
-                x = self.traj[:, self._xaxis_key_][:frame]
-                y = self.traj[:, self._xaxis_key_][:frame]
+                x = self.traj[:, 0][:frame]
+                y = self.traj[:, 1][:frame]
+                y = self.traj[:, 2][:frame]
             self.traj_current.set_xdata(x)
             self.traj_current.set_ydata(y)
+            self.traj_vert_current.set_xdata(x)
+            self.traj_vert_current.set_ydata(z)
 
         # data = np.array([this_x_data, this_y_data])
         scat.set_offsets(np.c_[this_x_data, this_y_data])
