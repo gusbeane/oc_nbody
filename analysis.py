@@ -222,7 +222,7 @@ class cluster_animator(object):
                  start=None, end=None, fps=30, fileout=None,
                  mass_max=None, acc_map=False, interface=None, options=None,
                  nres=360, acc='tot', cmap='bwr_r', cmin=-0.5, cmax=0.5,
-                 direction_arrow=False):
+                 direction_arrow=False, plot_panel=False):
 
         self.snapshots = snapshots
         self.acc_map = acc_map
@@ -233,6 +233,7 @@ class cluster_animator(object):
         self.cmax = cmax
 
         self.direction_arrow = direction_arrow
+        self.plot_panel = plot_panel
 
         self.mass_max = mass_max
 
@@ -263,9 +264,29 @@ class cluster_animator(object):
         first_y = self.snapshots[self.start]['position'][:, self._yaxis_key_]
         first_mass = self.snapshots[self.start]['mass']
 
-        self.fig, self.ax = plt.subplots(1)
+        if self.plot_panel:
+            self.ax = plt.subplot(1, 2, 1)
+            self.ax_traj = plt.subplot(2, 4, 3)
+            self.ax_pJr = plt.subplot(2, 4, 7)
+            self.ax_pJz = plt.subplot(2, 4, 8)
+            self.fig = plt.gcf()
+            first_actions = self.snapshots[self.start]['actions']
+            pecact = self._peculiar_actions_(first_actions)
+            self.scat_pJr = self.ax_pJr.scatter(pecact[:,2], pecact[:,0], s=0.5)
+            self.scat_pJz = self.ax_pJz.scatter(pecact[:,2], pecact[:,1], s=0.5)
+
+            self.traj = \
+                np.array([self.snapshots[i]['chosen_position'] for i in range(len(self.snapshots))])
+            self.ax_traj.plot(self.traj[:, self._xaxis_key_], self.traj[:, self._yaxis_key_],
+                              c='k', alpha=0.5)
+            self.traj_current = self.ax_traj.plot([self.traj[:, self._xaxis_key_][:self.start],
+                                                  self.traj[:, self._yaxis_key_][:self.start]], c='k')
+
+        else:
+            self.fig, self.ax = plt.subplots(1)
         self.ax.axis('equal')
         self.scat = self.ax.scatter(first_x, first_y, s=first_mass, c='k')
+
         if self.direction_arrow:
             chosen_velocity = self.snapshots[self.start]['chosen_velocity']
             vx = chosen_velocity[self._xaxis_key_]
@@ -363,6 +384,17 @@ class cluster_animator(object):
             vy /= self._arrow_norm_
             self.arrow.set_xy(((0, 0), (vx, vy)))
 
+        if self.plot_panel:
+            this_actions = self.snapshots[frame]['actions']
+            pact = self._peculiar_actions_(this_actions)
+            self.ax_pJr.set_offsets(np.c_[pact[:,2], pact[:,0]])
+            self.ax_pJz.set_offsets(np.c_[pact[:,1], pact[:,0]])
+
+            x = self.traj[:, self._xaxis_key_][:frame]
+            y = self.traj[:, self._xaxis_key_][:frame]
+            self.traj_current.set_xdata(x)
+            self.traj_current.set_ydata(y)
+
         # data = np.array([this_x_data, this_y_data])
         scat.set_offsets(np.c_[this_x_data, this_y_data])
         scat.set_sizes(this_mass)
@@ -372,6 +404,12 @@ class cluster_animator(object):
             return (scat, im)
         else:
             return (scat,)
+
+    def _peculiar_actions_(self, actions):
+        med = np.median(actions, axis=0)
+        p = np.subtract(actions, med)
+        p = np.divide(p, med)
+        return p
 
     def __call__(self):
         if self.acc_map:
