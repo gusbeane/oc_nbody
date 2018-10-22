@@ -208,7 +208,7 @@ class snapshot_action_calculator(object):
     def all_actions(self, fileout='cluster_snapshots_actions.p'):
         self._ag_.update_index(self.startnum, ss_id=self.ss_id)
         for i,cl in enumerate(tqdm(self.cluster)):
-            self._ag_.update_ss(self.ss_id, position=cl['chosen_position'],
+            self._ag_.update_ss(self.ss_id, position=cl['chosen_position']/1000.0,
                                 velocity=cl['chosen_velocity'])
             actions = self._ag_.actions(cl['position'], cl['velocity'],
                                         add_ss=True)
