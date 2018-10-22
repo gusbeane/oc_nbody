@@ -61,16 +61,30 @@ class snapshot_reader(object):
 
         return frame
 
-def dump_interface(interface, fileout='interface.p'):
+def dump_interface(interface, fileout='interface.p', skinny=True, skinny_fileout='interface_skinny.p'):
     del interface.first_snapshot
     del interface.snapshots
     del interface.star_snapshots
     del interface.first_ag
     dill.dump(interface, open(fileout, 'wb'))
+    if skinny:
+        del interface.grid.grid_accx_interpolators
+        del interface.grid.grid_accy_interpolators
+        del interface.grid.grid_accz_interpolators
+        dill.dump(interface, open(skinny_fileout, 'wb'))
 
 
-def load_interface(filein='interface.p'):
+def load_interface(filein=None, skinny=False):
+    if filein is None:
+        if skinny:
+            filein = 'interface_skinny.p'
+        else:
+            filein = 'interface.p'
     interface = dill.load(open(filein, 'rb'))
     from oceanic.gizmo_interface import acc_wrapper, run_worker_x, run_worker_y, run_worker_z
-    interface._init_acceleration_pool_()
+    if skinny:
+        interface._init_acceleration_grid_interpolators_()
+    else:
+        interface._init_acceleration_pool_()
+
     return interface
