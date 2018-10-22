@@ -223,7 +223,7 @@ class cluster_animator(object):
                  mass_max=None, acc_map=False, interface=None, options=None,
                  nres=360, acc='tot', cmap='bwr_r', cmin=-0.5, cmax=0.5,
                  direction_arrow=False, plot_panel=False,
-                 pLz_bound=0.3, pJr_bound=0.03, pJz_bound=0.1):
+                 pLz_bound=0.4, pJr_bound=0.04, pJz_bound=0.1):
 
         self.snapshots = snapshots
         self.acc_map = acc_map
@@ -282,10 +282,13 @@ class cluster_animator(object):
 
             self.ax_pJz.set_xlim(-pLz_bound, pLz_bound)
             self.ax_pJz.set_ylim(-pJz_bound, pJz_bound)
-            self.ax_pJr.set_xlabel('pLz')
-            self.ax_pJr.set_ylabel('pJz')
+            self.ax_pJz.set_xlabel('pLz')
+            self.ax_pJz.set_ylabel('pJz')
 
-            self.ax_traj.set_xlabel
+            self.ax_traj.set_xlabel('x [pc]')
+            self.ax_traj.set_ylabel('y [pc]')
+            self.ax_traj_vert.set_xlabel('x [pc]')
+            self.ax_traj_vert.set_ylabel('z [pc]')
 
             first_actions = self.snapshots[self.start]['actions']
             pecact = self._peculiar_actions_(first_actions)
