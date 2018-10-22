@@ -87,13 +87,19 @@ class agama_wrapper(object):
 
         self.af = agama.ActionFinder(self.potential, interp=False)
 
-    def update_ss(self, ss_id):
+    def update_ss(self, ss_id, position=None, velocity=None):
         self.ss_init = True
         ss_key = np.where(self.snap['star']['id'] == ss_id)[0]
-        self.chosen_position = self.snap['star'].prop(
-            'host.distance.principal')[ss_key]
-        self.chosen_velocity = self.snap['star'].prop(
-            'host.velocity.principal')[ss_key]
+        if position is None:
+            self.chosen_position = position
+        else:
+            self.chosen_position = self.snap['star'].prop(
+                'host.distance.principal')[ss_key]
+        if velocity is None:
+            self.chosen_velocity = velocity
+        else:
+            self.chosen_velocity = self.snap['star'].prop(
+                'host.velocity.principal')[ss_key]
 
     def actions(self, poslist, vlist, add_ss=False, in_kpc=False):
         if not in_kpc:
@@ -124,10 +130,15 @@ class snapshot_action_calculator(object):
             raise Exception('could not find snapshot file: ', snapshot_file)
 
         if ss_id is None:
-            raise Exception('please specify ss id')
+            try:
+                self.ss_id = self.cluster.meta['ss_id']
+            except:
+                raise Exception('cant find ss_id in cluster_snapshots⁠ \
+                                    please specify ss id')
         self.ss_id = ss_id
 
-    def scroll_actions(self, start=None, end=None):
+    def snapshot_actions(self, fileout='cluster_snapshots_snap_actions.npy',
+                         start=None, end=None):
         # start, end are int's describing where to start and ending
         # if both are None, will scroll through all snapshots where
         # snapshot_file spans
@@ -191,6 +202,16 @@ class snapshot_action_calculator(object):
                                          add_ss=True)
             self.cluster[cluster_key]['actions'] = actions
             np.save('cluster_snapshots_actions.npy', self.cluster)
+
+    def all_actions(self, fileout='cluster_snapshots_actions.p'):
+        self._ag_.update_index(self.startnum, ss_id=self.ss_id)
+        for i,cl in enumerate(self.cluster):
+            self._ag_.update_ss(self.ss_id, position=cl['chosen_position'],
+                                velocity=cl['chosen_velocity'])
+            actions = self._ag_.actions(cl['position'], cl['velocity'],
+                                        add_ss=True)
+            self.cluster[i]['actions'] = actions
+        np.save(fileout, self.cluster)
 
 
 class cluster_animator(object):
