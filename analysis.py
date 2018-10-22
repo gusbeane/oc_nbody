@@ -90,12 +90,12 @@ class agama_wrapper(object):
     def update_ss(self, ss_id, position=None, velocity=None):
         self.ss_init = True
         ss_key = np.where(self.snap['star']['id'] == ss_id)[0]
-        if position is None:
+        if position is not None:
             self.chosen_position = position
         else:
             self.chosen_position = self.snap['star'].prop(
                 'host.distance.principal')[ss_key]
-        if velocity is None:
+        if velocity is not None:
             self.chosen_velocity = velocity
         else:
             self.chosen_velocity = self.snap['star'].prop(
@@ -135,7 +135,8 @@ class snapshot_action_calculator(object):
             except:
                 raise Exception('cant find ss_id in cluster_snapshots⁠ \
                                     please specify ss id')
-        self.ss_id = ss_id
+        else:
+            self.ss_id = ss_id
 
     def snapshot_actions(self, fileout='cluster_snapshots_snap_actions.npy',
                          start=None, end=None):
