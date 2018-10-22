@@ -101,13 +101,12 @@ def dump_interface(interface, directory_out='interface'):
     dill.dump(interface, open(directory_out+'/interface', 'wb'))
 
 
-def load_interface(directory='interface', load_snapshot_acc=False, skinny=True):
+def load_interface(directory='interface', skinny=True):
     interface = dill.load(open(directory+'/interface', 'rb'))
 
-    if load_snapshot_acc:
-        interface.grid.snapshot_acceleration_x = dill.load(open(directory+'/snapshot_acceleration_x', 'rb'))
-        interface.grid.snapshot_acceleration_y = dill.load(open(directory+'/snapshot_acceleration_y', 'rb'))
-        interface.grid.snapshot_acceleration_z = dill.load(open(directory+'/snapshot_acceleration_z', 'rb'))
+    interface.grid.snapshot_acceleration_x = dill.load(open(directory+'/snapshot_acceleration_x', 'rb'))
+    interface.grid.snapshot_acceleration_y = dill.load(open(directory+'/snapshot_acceleration_y', 'rb'))
+    interface.grid.snapshot_acceleration_z = dill.load(open(directory+'/snapshot_acceleration_z', 'rb'))
 
     interface.grid.evolved_grid = dill.load(open(directory+'/evolved_grid', 'rb'))
     interface.grid.init_grid = dill.load(open(directory+'/init_grid', 'rb'))
