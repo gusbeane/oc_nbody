@@ -207,7 +207,7 @@ class snapshot_action_calculator(object):
 
     def all_actions(self, fileout='cluster_snapshots_actions.p'):
         self._ag_.update_index(self.startnum, ss_id=self.ss_id)
-        for i,cl in tqdm(enumerate(self.cluster)):
+        for i,cl in enumerate(tqdm(self.cluster)):
             self._ag_.update_ss(self.ss_id, position=cl['chosen_position'],
                                 velocity=cl['chosen_velocity'])
             actions = self._ag_.actions(cl['position'], cl['velocity'],
@@ -221,7 +221,8 @@ class cluster_animator(object):
                  xmin=-0.01, xmax=0.01, ymin=-0.01, ymax=0.01,
                  start=None, end=None, fps=30, fileout=None,
                  mass_max=None, acc_map=False, interface=None, options=None,
-                 nres=360, acc='tot', cmap='bwr_r', cmin=-0.5, cmax=0.5):
+                 nres=360, acc='tot', cmap='bwr_r', cmin=-0.5, cmax=0.5,
+                 direction_arrow=False):
 
         self.snapshots = snapshots
         self.acc_map = acc_map
@@ -230,6 +231,8 @@ class cluster_animator(object):
         self.cmap = cmap
         self.cmin = cmin
         self.cmax = cmax
+
+        self.direction_arrow = direction_arrow
 
         self.mass_max = mass_max
 
@@ -263,6 +266,15 @@ class cluster_animator(object):
         self.fig, self.ax = plt.subplots(1)
         self.ax.axis('equal')
         self.scat = self.ax.scatter(first_x, first_y, s=first_mass, c='k')
+        if self.direction_arrow:
+            chosen_velocity = self.snapshots[self.start]['chosen_velocity']
+            vx = chosen_velocity[self._xaxis_key_]
+            vy = chosen_velocity[self._yaxis_key_]
+            init_mag = np.sqrt(vx*vx + vy*vy)
+            self._arrow_norm_ = init_mag/(0.2 * self.xmax)
+            self.arrow = self.ax.arrow(0, 0, vx/self._arrow_norm_,
+                                       vy/self._arrow_norm_, fc="k", ec="k",
+                                       head_width=0.05, head_length=0.1)
         if acc_map:
             if interface is None or options is None:
                 raise Exception('Please provide interface and options file')
@@ -342,6 +354,14 @@ class cluster_animator(object):
             elif self.acc == 'z':
                 this_hm = hmz
             im.set_array(this_hm)
+
+        if self.direction_arrow:
+            vel = self.snapshots[frame]['chosen_velocity']
+            vx = vel[self._xaxis_key_]
+            vy = vel[self._yaxis_key_]
+            vx /= self._arrow_norm_
+            vy /= self._arrow_norm_
+            self.arrow.set_xy(((0, 0), (vx, vy)))
 
         # data = np.array([this_x_data, this_y_data])
         scat.set_offsets(np.c_[this_x_data, this_y_data])
