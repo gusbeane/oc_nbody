@@ -2,6 +2,7 @@ from amuse.units import units
 import numpy as np
 import dill
 from amuse.units import units
+import os
 
 class meta_array(np.ndarray):
     """Array with metadata."""
