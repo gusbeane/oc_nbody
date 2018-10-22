@@ -349,7 +349,7 @@ class cluster_animator(object):
             elif self.acc == 'z':
                 this_hm = hmz
 
-            self.im = plt.imshow(this_hm, extent=self.extent, origin='lower',
+            self.im = self.ax.imshow(this_hm, extent=self.extent, origin='lower',
                             vmin=self.cmin, vmax=self.cmax, cmap=self.cmap,
                             animated=True)
             plt.colorbar(label='acc '+self.acc + '[km/s/Myr]')
