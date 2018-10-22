@@ -112,6 +112,7 @@ def load_interface(directory='interface', skinny=True):
     interface.grid.init_grid = dill.load(open(directory+'/init_grid', 'rb'))
 
     if skinny:
+        interface.ncpu = 1
         interface._init_acceleration_grid_interpolators_()
     else:
         interface.grid.grid_accx_interpolators = dill.load(open(directory+'/grid_accx_interpolators', 'rb'))
