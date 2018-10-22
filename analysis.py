@@ -273,7 +273,7 @@ class cluster_animator(object):
             self.ax_pJz = plt.subplot(2, 4, 8)
 
             self.fig = plt.gcf()
-            plt.figure(figsize=(8, 4))
+            self.fig.set_size_inches(8, 4)
 
             self.ax_pJr.set_xlim(-pLz_bound, pLz_bound)
             self.ax_pJr.set_ylim(-pJr_bound, pJr_bound)
