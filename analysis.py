@@ -295,8 +295,8 @@ class cluster_animator(object):
             sys.exit(1)
 
     def _animate_(self, frame, scat, im=None):
-        this_x_data = self.snapshots[frame]['position'][:, self._xaxis_key_]
-        this_y_data = self.snapshots[frame]['position'][:, self._yaxis_key_]
+        this_x_data = self.snapshots[frame]['position'][:, self._xaxis_key_]/1000.0
+        this_y_data = self.snapshots[frame]['position'][:, self._yaxis_key_]/1000.0
         this_mass = self.snapshots[frame]['mass']
         if self.mass_max is not None:
             keys = np.where(this_mass < self.mass_max)[0]
