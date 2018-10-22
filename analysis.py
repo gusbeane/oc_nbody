@@ -213,7 +213,7 @@ class snapshot_action_calculator(object):
             actions = self._ag_.actions(cl['position'], cl['velocity'],
                                         add_ss=True)
             self.cluster[i]['actions'] = actions
-        np.save(fileout, self.cluster)
+        dill.dump(self.cluster, open(fileout, 'wb'))
 
 
 class cluster_animator(object):
