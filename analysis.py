@@ -304,9 +304,9 @@ class cluster_animator(object):
 
             self.traj = \
                 np.array([self.snapshots[i]['chosen_position'] for i in range(len(self.snapshots))])
-            x = self.traj[:,0]
-            y = self.traj[:,1]
-            z = self.traj[:,2]
+            x = self.traj[:,0]/1000.0
+            y = self.traj[:,1]/1000.0
+            z = self.traj[:,2]/1000.0
             self.ax_traj.plot(x, y, c='k', alpha=0.5)
             self.ax_traj_vert.plot(x, z, c='k', alpha=0.5)
 
@@ -364,8 +364,8 @@ class cluster_animator(object):
         self.ax.set_xlim(xmin, xmax)
         self.ax.set_ylim(ymin, ymax)
 
-        self.ax.set_xlabel(self.xaxis+' [pc]')
-        self.ax.set_ylabel(self.yaxis+' [pc]')
+        self.ax.set_xlabel(self.xaxis+' [kpc]')
+        self.ax.set_ylabel(self.yaxis+' [kpc]')
         self.fig.tight_layout()
 
         if fileout is None:
@@ -430,13 +430,13 @@ class cluster_animator(object):
             self.scat_pJz.set_offsets(np.c_[pact[:,1], pact[:,0]])
 
             if frame == 0:
-                x = self.traj[:, 0][frame]
-                y = self.traj[:, 1][frame]
-                z = self.traj[:, 2][frame]
+                x = self.traj[:, 0][frame]/1000.0
+                y = self.traj[:, 1][frame]/1000.0
+                z = self.traj[:, 2][frame]/1000.0
             else:
-                x = self.traj[:, 0][:frame]
-                y = self.traj[:, 1][:frame]
-                z = self.traj[:, 2][:frame]
+                x = self.traj[:, 0][:frame]/1000.0
+                y = self.traj[:, 1][:frame]/1000.0
+                z = self.traj[:, 2][:frame]/1000.0
             self.traj_current.set_xdata(x)
             self.traj_current.set_ydata(y)
             self.traj_vert_current.set_xdata(x)
