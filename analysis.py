@@ -445,8 +445,8 @@ class cluster_animator(object):
             self.traj_vert_current.set_xdata(x)
             self.traj_vert_current.set_ydata(z)
 
-            self.traj_scat.set_offsets([x, y])
-            self.traj_vert_scat.set_offsets([x, z])
+            self.traj_scat.set_offsets(np.c_[x, y])
+            self.traj_vert_scat.set_offsets(np.c_[x, z])
 
         # data = np.array([this_x_data, this_y_data])
         scat.set_offsets(np.c_[this_x_data, this_y_data])
