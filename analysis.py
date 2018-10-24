@@ -310,6 +310,9 @@ class cluster_animator(object):
             self.ax_traj.plot(x, y, c='k', alpha=0.5)
             self.ax_traj_vert.plot(x, z, c='k', alpha=0.5)
 
+            self.traj_scat = self.ax_traj.scatter(x[0], y[0], c='k', s=5)
+            self.traj_vert_scat = self.ax_traj.scatter(x[0], z[0], c='k', s=5)
+
             if self.start ==0:
                 x = x[self.start]
                 y = y[self.start]
@@ -441,6 +444,9 @@ class cluster_animator(object):
             self.traj_current.set_ydata(y)
             self.traj_vert_current.set_xdata(x)
             self.traj_vert_current.set_ydata(z)
+
+            self.traj_scat.set_offsets([x, y])
+            self.traj_vert_scat.set_offsets([x, z])
 
         # data = np.array([this_x_data, this_y_data])
         scat.set_offsets(np.c_[this_x_data, this_y_data])
