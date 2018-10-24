@@ -359,7 +359,7 @@ class cluster_animator(object):
             self.im = self.ax.imshow(this_hm, extent=self.extent, origin='lower',
                             vmin=self.cmin, vmax=self.cmax, cmap=self.cmap,
                             animated=True)
-            plt.colorbar(label='acc '+self.acc + '[km/s/Myr]', cax=self.ax)
+            self.fig.colorbar(self.im, ax=self.ax)
 
         self.ax.set_xlim(xmin, xmax)
         self.ax.set_ylim(ymin, ymax)
