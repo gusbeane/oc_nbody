@@ -225,7 +225,7 @@ class cluster_animator(object):
                  mass_max=None, acc_map=False, interface=None, options=None,
                  nres=360, acc='tot', cmap='bwr_r', cmin=-0.5, cmax=0.5,
                  direction_arrow=False, plot_panel=False,
-                 pLz_bound=2.0, pJr_bound=0.6, pJz_bound=0.1):
+                 pLz_bound=2.0, pJr_bound=0.6, pJz_bound=0.1, normalize=False):
 
         rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
         rc('text', usetex=True)
@@ -247,6 +247,7 @@ class cluster_animator(object):
 
         self.xaxis = xaxis
         self.yaxis = yaxis
+        self.normalize = normalize
 
         self._xaxis_key_ = self._axis_key_(self.xaxis)
         self._yaxis_key_ = self._axis_key_(self.yaxis)
@@ -465,7 +466,8 @@ class cluster_animator(object):
     def _peculiar_actions_(self, actions):
         med = np.median(actions, axis=0)
         p = np.subtract(actions, med)
-        p = np.divide(p, med)
+        if self.normalize:
+            p = np.divide(p, med)
         return p
 
     def __call__(self):
