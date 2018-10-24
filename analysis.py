@@ -432,21 +432,25 @@ class cluster_animator(object):
             self.scat_pJr.set_offsets(np.c_[pact[:,2], pact[:,0]])
             self.scat_pJz.set_offsets(np.c_[pact[:,1], pact[:,0]])
 
+            x = self.traj[:,0]
+            y = self.traj[:,1]
+            z = self.traj[:,2]
+
+            self.traj_scat.set_offsets(np.transpose([x[frame], y[frame]]))
+            self.traj_vert_scat.set_offsets(np.transpose([x[frame], z[frame]]))
+
             if frame == 0:
-                x = self.traj[:, 0][frame]/1000.0
-                y = self.traj[:, 1][frame]/1000.0
-                z = self.traj[:, 2][frame]/1000.0
+                x = x[frame]/1000.0
+                y = y[frame]/1000.0
+                z = z[frame]/1000.0
             else:
-                x = self.traj[:, 0][:frame]/1000.0
-                y = self.traj[:, 1][:frame]/1000.0
-                z = self.traj[:, 2][:frame]/1000.0
+                x = x[:frame]/1000.0
+                y = y[:frame]/1000.0
+                z = z[:frame]/1000.0
             self.traj_current.set_xdata(x)
             self.traj_current.set_ydata(y)
             self.traj_vert_current.set_xdata(x)
             self.traj_vert_current.set_ydata(z)
-
-            self.traj_scat.set_offsets(np.c_[x[frame], y[frame]])
-            self.traj_vert_scat.set_offsets(np.c_[x[frame], z[frame]])
 
         # data = np.array([this_x_data, this_y_data])
         scat.set_offsets(np.c_[this_x_data, this_y_data])
