@@ -1,6 +1,7 @@
-import matplotlib; matplotlib.use('agg')
+import matplotlib as mpl; mpl.use('agg')
 
 import matplotlib.pyplot as plt
+from matplotlib import rc
 from matplotlib.animation import FuncAnimation
 from amuse.units import units
 
@@ -16,6 +17,7 @@ import dill
 from oceanic.options import options_reader
 from amuse.units import units
 from tqdm import tqdm
+
 
 class agama_wrapper(object):
     def __init__(self, opt):
@@ -223,7 +225,12 @@ class cluster_animator(object):
                  mass_max=None, acc_map=False, interface=None, options=None,
                  nres=360, acc='tot', cmap='bwr_r', cmin=-0.5, cmax=0.5,
                  direction_arrow=False, plot_panel=False,
-                 pLz_bound=0.4, pJr_bound=0.04, pJz_bound=0.1):
+                 pLz_bound=2.0, pJr_bound=0.6, pJz_bound=0.1):
+
+        rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+        rc('text', usetex=True)
+        mpl.rcParams['text.latex.preamble'] = [r'\usepackage{amsmath}']
+
 
         self.snapshots = snapshots
         self.acc_map = acc_map
@@ -273,7 +280,7 @@ class cluster_animator(object):
             self.ax_pJz = plt.subplot(2, 4, 8)
 
             self.fig = plt.gcf()
-            self.fig.set_size_inches(8, 4)
+            self.fig.set_size_inches(10, 4)
 
             self.ax_pJr.set_xlim(-pLz_bound, pLz_bound)
             self.ax_pJr.set_ylim(-pJr_bound, pJr_bound)
