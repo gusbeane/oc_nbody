@@ -233,24 +233,26 @@ class gizmo_interface(object):
         return snap
 
     def _assign_self_center_(self, part):
-        if part.snapshot['index'] == self.startnum:
-            this_center_position = self.center_position
-        else:
-            snapshot_time_in_Myr = part.snapshot['time'] * 1000.0 - \
-                                   self.first_snapshot_time_in_Myr
+        gizmo.io.Read.assign_center(part)
 
-            offset = self.center_velocity * snapshot_time_in_Myr
-            offset *= self.convert_kms_Myr_to_kpc
+        # if part.snapshot['index'] == self.startnum:
+        #     this_center_position = self.center_position
+        # else:
+        #     snapshot_time_in_Myr = part.snapshot['time'] * 1000.0 - \
+        #                            self.first_snapshot_time_in_Myr
 
-            this_center_position = self.center_position + offset
+        #     offset = self.center_velocity * snapshot_time_in_Myr
+        #     offset *= self.convert_kms_Myr_to_kpc
 
-        print('this center position:', this_center_position)
-        part.center_position = this_center_position
-        part.center_velocity = self.center_velocity
+        #     this_center_position = self.center_position + offset
+
+        # print('this center position:', this_center_position)
+        # part.center_position = this_center_position
+        # part.center_velocity = self.center_velocity
         part.principal_axes_vectors = self.principal_axes_vectors
         for key in part.keys():
-            part[key].center_position = this_center_position
-            part[key].center_velocity = self.center_velocity
+            # part[key].center_position = this_center_position
+            # part[key].center_velocity = self.center_velocity
             part[key].principal_axes_vectors = self.principal_axes_vectors
 
     def _time_in_Myr_(self):
