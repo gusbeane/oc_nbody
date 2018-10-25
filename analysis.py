@@ -225,7 +225,7 @@ class cluster_animator(object):
                  mass_max=None, acc_map=False, interface=None, options=None,
                  nres=360, acc='tot', cmap='bwr_r', cmin=-0.5, cmax=0.5,
                  direction_arrow=False, plot_panel=False,
-                 pLz_bound=2.0, pJr_bound=0.6, pJz_bound=0.1, normalize=False):
+                 pLz_bound=40.0, pJr_bound=30.0, pJz_bound=20.0, normalize=False):
 
         rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
         rc('text', usetex=True)
