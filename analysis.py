@@ -243,7 +243,7 @@ class cluster_animator(object):
 
         self.direction_arrow = direction_arrow
         self.plot_panel = plot_panel
-        self.plot_cluster_com
+        self.plot_cluster_com = plot_cluster_com
 
         self.mass_max = mass_max
 
