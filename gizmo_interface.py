@@ -218,18 +218,12 @@ class gizmo_interface(object):
         self.time_in_Myr = self._time_in_Myr_()
 
     def _clean_Rmag_(self, snap):
-        # recalculate center position
-        old_center_position = snap.center_position
-        gizmo.io.Read.assign_center(snap)
+        # cleans out all particles greater than Rmag from galactic center
         for key in snap.keys():
             rmag = snap[key].prop('host.distance.total')
             rmag_keys = np.where(rmag < self.Rmax)[0]
             for dict_key in snap[key].keys():
                 snap[key][dict_key] = snap[key][dict_key][rmag_keys]
-        # reassign center position
-        snap.center_position = old_center_position
-        for key in snap.keys():
-            snap[key].center_position = old_center_position
         return snap
 
     def _assign_self_center_(self, part):
