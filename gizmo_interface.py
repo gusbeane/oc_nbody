@@ -262,7 +262,8 @@ class gizmo_interface(object):
         return time_in_Myr
 
     def _init_starting_star_interpolators_(self):
-        self.chosen_indices = [int(np.where(self.snapshots[i]['star']['id'] == self.chosen_id)[0]) for i in range(len(self.snapshots)) ]
+        self.chosen_indices = [int(np.where(self.snapshots[i]['star']['id'] == self.chosen_id)[0]) 
+                               for i in range(len(self.snapshots)) ]
         self.chosen_snapshot_positions = [self.snapshots[i]['star'].prop('host.distance.principal')\
                     [self.chosen_indices[i]] for i in range(len(self.snapshots))]
         self.chosen_snapshot_velocities = [self.star_snapshots[i]['star'].prop('host.velocity.principal')\
