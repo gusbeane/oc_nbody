@@ -225,7 +225,8 @@ class cluster_animator(object):
                  mass_max=None, acc_map=False, interface=None, options=None,
                  nres=360, acc='tot', cmap='bwr_r', cmin=-0.5, cmax=0.5,
                  direction_arrow=False, plot_panel=False,
-                 pLz_bound=40.0, pJr_bound=30.0, pJz_bound=20.0, normalize=False):
+                 pLz_bound=2.0, pJr_bound=0.6, pJz_bound=0.1, normalize=False,
+                 plot_cluster_com=False):
 
         rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
         rc('text', usetex=True)
@@ -242,6 +243,7 @@ class cluster_animator(object):
 
         self.direction_arrow = direction_arrow
         self.plot_panel = plot_panel
+        self.plot_cluster_com
 
         self.mass_max = mass_max
 
@@ -339,6 +341,13 @@ class cluster_animator(object):
             self.arrow = self.ax.arrow(0, 0, vx/self._arrow_norm_,
                                        vy/self._arrow_norm_, fc="k", ec="k",
                                        head_width=0.05, head_length=0.1)
+
+        if self.plot_cluster_com:
+            pos = self.snapshots[self.start]['position']
+            mass = self.snapshots[self.start]['mass']
+            com = self._cluster_com_(pos, mass)
+            self.cluster_com_scat = self.ax.scatter(com[self._xaxis_key_], com[self._yaxis_key_], s=5, c='r')
+
         if acc_map:
             if interface is None or options is None:
                 raise Exception('Please provide interface and options file')
@@ -458,6 +467,13 @@ class cluster_animator(object):
         scat.set_sizes(this_mass)
         t = self.snapshots[frame]['time']
         self.ax.set_title("{:.2f}".format(t))
+
+        if self.plot_cluster_com:
+            pos = self.snapshots[frame]['position']
+            mass = self.snapshots[frame]['mass']
+            com = self._cluster_com_(pos, mass)
+            self.cluster_com_scat.set_offsets(np.c_[com[self._xaxis_key_], com[self._yaxis_key_]])
+
         if self.acc_map:
             return (scat, im)
         else:
@@ -469,6 +485,12 @@ class cluster_animator(object):
         if self.normalize:
             p = np.divide(p, med)
         return p
+
+    def _cluster_com_(self, position, mass):
+        posmass = np.multiply(position, mass)
+        totmass = np.sum(mass)
+        com = np.sum(posmass, axis=0)
+        return com/totmass
 
     def __call__(self):
         if self.acc_map:
