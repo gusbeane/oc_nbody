@@ -487,7 +487,7 @@ class cluster_animator(object):
         return p
 
     def _cluster_com_(self, position, mass):
-        posmass = np.multiply(position, mass)
+        posmass = np.multiply(np.array(position), np.array(mass))
         totmass = np.sum(mass)
         com = np.sum(posmass, axis=0)
         return com/totmass
