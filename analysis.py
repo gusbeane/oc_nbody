@@ -343,7 +343,7 @@ class cluster_animator(object):
                                        head_width=0.05, head_length=0.1)
 
         if self.plot_cluster_com:
-            pos = self.snapshots[self.start]['position']
+            pos = self.snapshots[self.start]['position']/1000.0 # convert to kpc
             mass = self.snapshots[self.start]['mass']
             com = self._cluster_com_(pos, mass)
             self.cluster_com_scat = self.ax.scatter(com[self._xaxis_key_], com[self._yaxis_key_], s=5, c='r')
@@ -469,7 +469,7 @@ class cluster_animator(object):
         self.ax.set_title("{:.2f}".format(t))
 
         if self.plot_cluster_com:
-            pos = self.snapshots[frame]['position']
+            pos = self.snapshots[frame]['position']/1000.0 # convert to kpc
             mass = self.snapshots[frame]['mass']
             com = self._cluster_com_(pos, mass)
             self.cluster_com_scat.set_offsets(np.c_[com[self._xaxis_key_], com[self._yaxis_key_]])
