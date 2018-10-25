@@ -87,9 +87,9 @@ def dump_interface(interface, directory_out='interface'):
     del interface.grid.grid_accy_interpolators
     del interface.grid.grid_accz_interpolators
 
-    dill.dump(directory_out+'/snapshot_acceleration_x.npz', interface.grid.snapshot_acceleration_x)
-    dill.dump(directory_out+'/snapshot_acceleration_y.npz', interface.grid.snapshot_acceleration_y)
-    dill.dump(directory_out+'/snapshot_acceleration_z.npz', interface.grid.snapshot_acceleration_z)
+    dill.dump( interface.grid.snapshot_acceleration_x, open(directory_out+'/snapshot_acceleration_x.npz', 'wb'))
+    dill.dump(interface.grid.snapshot_acceleration_y, open(directory_out+'/snapshot_acceleration_y.npz', 'wb'))
+    dill.dump(interface.grid.snapshot_acceleration_z, open(directory_out+'/snapshot_acceleration_z.npz', 'wb'))
     del interface.grid.snapshot_acceleration_x
     del interface.grid.snapshot_acceleration_y
     del interface.grid.snapshot_acceleration_z
