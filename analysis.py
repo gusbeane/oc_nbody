@@ -226,7 +226,7 @@ class cluster_animator(object):
                  nres=360, acc='tot', cmap='bwr_r', cmin=-0.5, cmax=0.5,
                  direction_arrow=False, plot_panel=False,
                  pLz_bound=2.0, pJr_bound=0.6, pJz_bound=0.1, normalize=False,
-                 plot_cluster_com=False, com_rcut=0.8):
+                 plot_cluster_com=False, com_rcut=None):
 
         rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
         rc('text', usetex=True)
@@ -495,7 +495,7 @@ class cluster_animator(object):
         if self.com_rcut is not None:
             diff = np.subtract(position, self._old_com_)
             diff_mag = np.linalg.norm(diff, axis=1)
-            keys = np.where(diff < self.com_rcut)
+            keys = np.where(diff < self.com_rcut)[0]
             totmass = np.sum(mass[keys])
         com = np.sum(posmass[keys], axis=0)
         self._old_com_ = com/totmass
