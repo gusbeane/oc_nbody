@@ -71,7 +71,10 @@ def dump_interface(interface, directory_out='interface'):
     # delete stuff we won't ever need again
     del interface.first_snapshot
     del interface.snapshots
-    del interface.star_snapshots
+    try: # for backwards compatibility
+        del interface.star_snapshots
+    except:
+        pass
     del interface.first_ag
 
     # now dump grid piecemeal
