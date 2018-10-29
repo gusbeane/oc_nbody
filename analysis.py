@@ -493,10 +493,10 @@ class cluster_animator(object):
         posmass = np.multiply(position, mass.reshape(-1, 1))
         totmass = np.sum(mass)
         if self.com_rcut is not None:
-            for _ in range(100):
+            for rcut in np.linspace(10*self.com_rcut, self.com_rcut, 100):
                 diff = np.subtract(position, self._old_com_)
                 diff_mag = np.linalg.norm(diff, axis=1)
-                keys = np.where(diff < self.com_rcut)[0]
+                keys = np.where(diff < rcut)[0]
                 totmass = np.sum(mass[keys])
                 com = np.sum(posmass[keys], axis=0)
                 self._old_com_ = com/totmass
