@@ -496,7 +496,7 @@ class cluster_animator(object):
             for rcut in np.linspace(10*self.com_rcut, self.com_rcut, 100):
                 diff = np.subtract(position, self._old_com_)
                 diff_mag = np.linalg.norm(diff, axis=1)
-                keys = np.where(diff < rcut)[0]
+                keys = np.where(diff_mag < rcut)[0]
                 totmass = np.sum(mass[keys])
                 com = np.sum(posmass[keys], axis=0)
                 self._old_com_ = com/totmass
