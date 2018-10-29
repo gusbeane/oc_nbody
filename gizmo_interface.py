@@ -204,7 +204,7 @@ class gizmo_interface(object):
                 gizmo.io.Read.read_snapshots(['star'],
                                              'index', self.snapshot_indices,
                                              properties=['velocity', 'id',
-                                                         'position'],
+                                                         'position', 'mass'],
                                              simulation_directory=
                                              self.simulation_directory,
                                              assign_center=False)
