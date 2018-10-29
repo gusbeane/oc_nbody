@@ -540,7 +540,7 @@ class gizmo_interface(object):
         print('evolved model to t (Myr):', this_t_in_Myr)
 
     def evolve_grid(self, pos):
-        self.grid.gen_evolved_grid(self, pos)
+        self.grid.gen_evolved_grid(pos)
         self.grid._grid_evolved_kdtree_ = cKDTree(self.grid.evolved_grid)
 
     def _evolve_starting_star_(self, time_in_Myr):
