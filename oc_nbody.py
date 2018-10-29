@@ -34,10 +34,18 @@ def evolve_cluster_in_galaxy(options_file):
     system.add_system(cluster_code, (galaxy_code,))
     system.add_system(galaxy_code)
 
+    converter = cluster_code.unit_converter
+
     for i, t in enumerate(tqdm(times)):
         system.evolve_model(t, timestep=timestep | units.Myr)
         cluster.clean_ejections(system)
-        snap_reader.process_snapshot(system, galaxy_code, i, t)
+
+        bound = system.particles.bound_subset(unit_converter=converter)
+        bound_com = bound.center_of_mass().value_in(units.kpc)
+
+        galaxy_code.evolve_grid(bound_com)
+
+        snap_reader.process_snapshot(system, galaxy_code, bound_com, i, t)
 
     snap_reader.finish_sim()
 

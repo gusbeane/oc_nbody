@@ -258,7 +258,7 @@ class gizmo_interface(object):
         return time_in_Myr
 
     def _init_starting_star_interpolators_(self):
-        self.chosen_indices = [int(np.where(self.snapshots[i]['star']['id'] == self.chosen_id)[0]) 
+        self.chosen_indices = [int(np.where(self.snapshots[i]['star']['id'] == self.chosen_id)[0])
                                for i in range(len(self.snapshots)) ]
         self.chosen_snapshot_positions = [self.snapshots[i]['star'].prop('host.distance.principal')\
                     [self.chosen_indices[i]] for i in range(len(self.snapshots))]
@@ -538,6 +538,10 @@ class gizmo_interface(object):
         self._execute_acceleration_grid_interpolators_(this_t_in_Myr)
 
         print('evolved model to t (Myr):', this_t_in_Myr)
+
+    def evolve_grid(self, pos):
+        self.grid.gen_evolved_grid(self, pos):
+        self.grid._grid_evolved_kdtree_ = cKDTree(self.grid.evolved_grid)
 
     def _evolve_starting_star_(self, time_in_Myr):
         self.chosen_evolved_position = [float(interpolate.splev(time_in_Myr, self.chosen_pos_interp[i])) for i in range(3)]

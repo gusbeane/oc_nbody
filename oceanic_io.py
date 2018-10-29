@@ -23,8 +23,8 @@ class snapshot_reader(object):
         self.frames.meta['ss_id'] = galaxy_code.chosen_id
         self.frames.meta['simulation_directory'] = galaxy_code.simulation_directory
 
-    def process_snapshot(self, system, galaxy_code, i, time, final=None):
-        f = self._grab_frame_(system, galaxy_code, time)
+    def process_snapshot(self, system, galaxy_code, com, i, time, final=None):
+        f = self._grab_frame_(system, galaxy_code, com, time)
         self.frames = meta_array(np.append(self.frames, f), **self.frames.meta)
         # self.frames.append(self._grab_frame_(system, galaxy_code, time))
         if np.mod(i, self.write_frequency) == 0:
@@ -35,7 +35,7 @@ class snapshot_reader(object):
         fout = self.output_directory+'/cluster_snapshots.p'
         dill.dump(self.frames, open(fout, 'wb'))
 
-    def _grab_frame_(self, system, galaxy_code, time):
+    def _grab_frame_(self, system, galaxy_code, com, time):
         x = system.particles.x.value_in(units.parsec)
         y = system.particles.y.value_in(units.parsec)
         z = system.particles.z.value_in(units.parsec)
@@ -59,7 +59,8 @@ class snapshot_reader(object):
                  'velocity': velocity,
                  'mass': mass,
                  'chosen_position': chosen_position,
-                 'chosen_velocity': chosen_velocity}
+                 'chosen_velocity': chosen_velocity,
+                 'com': com}
 
         return frame
 
