@@ -225,7 +225,7 @@ class gizmo_interface(object):
         self.chosen_snapshot_velocities = []
 
         for i in range(len(self.snapshots)):
-            index = int(np.where(self.snapshots[i]['star']['id'] == self.chosen_id)[0]
+            index = int(np.where(self.snapshots[i]['star']['id'] == self.chosen_id)[0])
             self.chosen_indices.append(index)
 
             position = self.snapshots[i]['star'].prop('host.distance.principal')[index]
