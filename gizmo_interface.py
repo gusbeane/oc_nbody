@@ -168,7 +168,8 @@ class gizmo_interface(object):
                                              'index', self.snapshot_indices,
                                              properties=['position', 'id',
                                                          'mass', 'velocity',
-                                                         'smooth.length'],
+                                                         'smooth.length',
+                                                         'form.scalefactor'],
                                              simulation_directory=
                                              self.simulation_directory,
                                              assign_principal_axes=True)
