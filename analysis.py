@@ -226,7 +226,7 @@ class cluster_animator(object):
                  nres=360, acc='tot', cmap='bwr_r', cmin=-0.5, cmax=0.5,
                  direction_arrow=False, plot_panel=False,
                  pLz_bound=2.0, pJr_bound=0.6, pJz_bound=0.1, normalize=False,
-                 plot_cluster_com=False):
+                 plot_cluster_com=False, com_rcut=None):
 
         rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
         rc('text', usetex=True)
@@ -244,6 +244,8 @@ class cluster_animator(object):
         self.direction_arrow = direction_arrow
         self.plot_panel = plot_panel
         self.plot_cluster_com = plot_cluster_com
+        self.com_rcut = 0.8
+        self._old_com_ = np.array([0, 0, 0])
 
         self.mass_max = mass_max
 
@@ -490,8 +492,17 @@ class cluster_animator(object):
         # this is weird - TODO: fix
         posmass = np.multiply(position, mass.reshape(-1, 1))
         totmass = np.sum(mass)
-        com = np.sum(posmass, axis=0)
-        return com/totmass
+        if self.com_rcut is not None:
+            for rcut in np.linspace(10*self.com_rcut, self.com_rcut, 100):
+                diff = np.subtract(position, self._old_com_)
+                diff_mag = np.linalg.norm(diff, axis=1)
+                keys = np.where(diff_mag < rcut)[0]
+                totmass = np.sum(mass[keys])
+                com = np.sum(posmass[keys], axis=0)
+                self._old_com_ = com/totmass
+
+        self._old_com_ = com/totmass
+        return self._old_com_
 
     def __call__(self):
         if self.acc_map:

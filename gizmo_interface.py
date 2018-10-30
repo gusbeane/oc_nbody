@@ -179,11 +179,44 @@ class gizmo_interface(object):
 
             pickle.dump(self.snapshots, open(cache_file, 'wb'), protocol=4)
 
+        # # # # # # # # # # # # # # # # # # # # # # #
+        #                                           #
+        # Read in velocities of only star particles #
+        #                                           #
+        # # # # # # # # # # # # # # # # # # # # # # #
+
+        cache_name = 'star_vel_' + self.sim_name + '_start' + str(init)
+        cache_name += '_end' + str(fin) + '_first' + str(self.startnum)
+        cache_name += '_Rmag' + str(self.Rmax) + '.p'
+        cache_file = self.cache_directory + '/' + cache_name
+
+        try:
+            self.star_snapshots = pickle.load(open(cache_file, 'rb'))
+            print('found and loaded cached file for star velocities:')
+            print(cache_name)
+        except:
+            print('couldnt find cached file for star velocities:')
+            print(cache_name)
+            print('constructing...')
+            self.star_snapshots =\
+                gizmo.io.Read.read_snapshots(['star'],
+                                             'index', self.snapshot_indices,
+                                             properties=['velocity', 'id',
+                                                         'position', 'mass'],
+                                             simulation_directory=
+                                             self.simulation_directory,
+                                             assign_center=False)
+
+            for snap in self.star_snapshots:
+                self._assign_self_center_(snap)
+
+            pickle.dump(self.star_snapshots, open(cache_file, 'wb'), protocol=4)
+
         # store some relevant data
         self.time_in_Myr = self._time_in_Myr_()
 
     def _clean_Rmag_(self, snap):
-        # recalculate center position
+        # cleans out all particles greater than Rmag from galactic center
         for key in snap.keys():
             rmag = snap[key].prop('host.distance.total')
             rmag_keys = np.where(rmag < self.Rmax)[0]
@@ -192,24 +225,26 @@ class gizmo_interface(object):
         return snap
 
     def _assign_self_center_(self, part):
-        if part.snapshot['index'] == self.startnum:
-            this_center_position = self.center_position
-        else:
-            snapshot_time_in_Myr = part.snapshot['time'] * 1000.0 - \
-                                   self.first_snapshot_time_in_Myr
+        gizmo.io.Read.assign_center(part)
 
-            offset = self.center_velocity * snapshot_time_in_Myr
-            offset *= self.convert_kms_Myr_to_kpc
+        # if part.snapshot['index'] == self.startnum:
+        #     this_center_position = self.center_position
+        # else:
+        #     snapshot_time_in_Myr = part.snapshot['time'] * 1000.0 - \
+        #                            self.first_snapshot_time_in_Myr
 
-            this_center_position = self.center_position + offset
+        #     offset = self.center_velocity * snapshot_time_in_Myr
+        #     offset *= self.convert_kms_Myr_to_kpc
 
-        print('this center position:', this_center_position)
-        part.center_position = this_center_position
-        part.center_velocity = self.center_velocity
+        #     this_center_position = self.center_position + offset
+
+        # print('this center position:', this_center_position)
+        # part.center_position = this_center_position
+        # part.center_velocity = self.center_velocity
         part.principal_axes_vectors = self.principal_axes_vectors
         for key in part.keys():
-            part[key].center_position = this_center_position
-            part[key].center_velocity = self.center_velocity
+            # part[key].center_position = this_center_position
+            # part[key].center_velocity = self.center_velocity
             part[key].principal_axes_vectors = self.principal_axes_vectors
 
     def _time_in_Myr_(self):
@@ -516,6 +551,10 @@ class gizmo_interface(object):
         self._execute_acceleration_grid_interpolators_(this_t_in_Myr)
 
         print('evolved model to t (Myr):', this_t_in_Myr)
+
+    def evolve_grid(self, pos):
+        self.grid.gen_evolved_grid(pos)
+        self.grid._grid_evolved_kdtree_ = cKDTree(self.grid.evolved_grid)
 
     def _evolve_starting_star_(self, time_in_Myr):
         self.chosen_evolved_position = [float(interpolate.splev(time_in_Myr, self.chosen_pos_interp[i])) for i in range(3)]
