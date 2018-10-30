@@ -227,7 +227,7 @@ class cluster_animator(object):
                  direction_arrow=False, plot_panel=False,
                  pLz_bound=2.0, pJr_bound=0.6, pJz_bound=0.1, normalize=False,
                  plot_cluster_com=False, com_rcut=None, color_by_dist=True,
-                 dist_vmin = 0.0, dist_vmax=50.0):
+                 dist_vmin = 0.0, dist_vmax=50.0, log_distance=False):
 
         rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
         rc('text', usetex=True)
@@ -249,6 +249,7 @@ class cluster_animator(object):
         self.plot_cluster_com = plot_cluster_com
         self.com_rcut = 0.8
         self.color_by_dist = color_by_dist
+        self.log_distance = log_distance
         self._old_com_ = np.array([0, 0, 0])
 
         self.mass_max = mass_max
@@ -286,7 +287,10 @@ class cluster_animator(object):
             med_pos = np.median(pos, axis=0)
             diff = np.subtract(pos, med_pos)
             diff_mag = np.linalg.norm(diff, axis=1)
-            c = diff_mag
+            if self.log_distance:
+                c = np.log10(diff_mag)
+            else:
+                c = diff_mag
         else:
             c = 'k'
 
@@ -352,7 +356,11 @@ class cluster_animator(object):
         self.scat = self.ax.scatter(first_x, first_y, s=first_mass, c=c,
                                     vmin=self.dist_vmin, vmax=self.dist_vmax)
         if self.color_by_dist:
-            self.fig.colorbar(self.scat, ax=self.ax)
+            if self.log_distance:
+                label = 'log10(dist) [pc]'
+            else:
+                label = 'dist [pc]'
+            self.fig.colorbar(self.scat, ax=self.ax, label=label)
 
         if self.direction_arrow:
             chosen_velocity = self.snapshots[self.start]['chosen_velocity']
@@ -433,7 +441,10 @@ class cluster_animator(object):
             med_pos = np.median(pos, axis=0)
             diff = np.subtract(pos, med_pos)
             diff_mag = np.linalg.norm(diff, axis=1)
-            c = diff_mag
+            if self.log_distance:
+                c = np.log10(diff_mag)
+            else:
+                c = diff_mag
 
         if self.mass_max is not None:
             keys = np.where(this_mass < self.mass_max)[0]
