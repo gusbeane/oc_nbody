@@ -226,7 +226,8 @@ class cluster_animator(object):
                  nres=360, acc='tot', cmap='bwr_r', cmin=-0.5, cmax=0.5,
                  direction_arrow=False, plot_panel=False,
                  pLz_bound=2.0, pJr_bound=0.6, pJz_bound=0.1, normalize=False,
-                 plot_cluster_com=False, com_rcut=None):
+                 plot_cluster_com=False, com_rcut=None, color_by_dist=True,
+                 dist_vmin = 0.0, dist_vmax=50.0):
 
         rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
         rc('text', usetex=True)
@@ -240,11 +241,14 @@ class cluster_animator(object):
         self.cmap = cmap
         self.cmin = cmin
         self.cmax = cmax
+        self.dist_vmin = dist_vmin
+        self.dist_vmax = dist_vmax
 
         self.direction_arrow = direction_arrow
         self.plot_panel = plot_panel
         self.plot_cluster_com = plot_cluster_com
         self.com_rcut = 0.8
+        self.color_by_dist = color_by_dist
         self._old_com_ = np.array([0, 0, 0])
 
         self.mass_max = mass_max
@@ -277,6 +281,15 @@ class cluster_animator(object):
         first_y = self.snapshots[self.start]['position'][:, self._yaxis_key_]
         first_mass = self.snapshots[self.start]['mass']
 
+        if self.color_by_dist:
+            pos = self.snapshots[self.start]['position']
+            med_pos = np.median(pos, axis=0)
+            diff = np.subtract(pos, med_pos)
+            diff_mag = np.linalg.norm(diff, axis=1)
+            c = diff_mag
+        else:
+            c = 'k'
+
         if self.plot_panel:
             self.ax = plt.subplot(1, 2, 1)
             self.ax_traj = plt.subplot(2, 4, 3)
@@ -304,8 +317,12 @@ class cluster_animator(object):
 
             first_actions = self.snapshots[self.start]['actions']
             pecact = self._peculiar_actions_(first_actions)
-            self.scat_pJr = self.ax_pJr.scatter(pecact[:,2], pecact[:,0], s=0.2, c='k')
-            self.scat_pJz = self.ax_pJz.scatter(pecact[:,2], pecact[:,1], s=0.2, c='k')
+            self.scat_pJr = self.ax_pJr.scatter(pecact[:,2], pecact[:,0],
+                                                s=0.2, c=c, vmin=self.dist_vmin,
+                                                vmax=self.dist_vmax)
+            self.scat_pJz = self.ax_pJz.scatter(pecact[:,2], pecact[:,1],
+                                                s=0.2, c=c, vmin=self.dist_vmin,
+                                                vmax=self.dist_vmax)
 
             self.traj = \
                 np.array([self.snapshots[i]['chosen_position'] for i in range(len(self.snapshots))])
@@ -332,7 +349,8 @@ class cluster_animator(object):
         else:
             self.fig, self.ax = plt.subplots(1)
         self.ax.axis('equal')
-        self.scat = self.ax.scatter(first_x, first_y, s=first_mass, c='k')
+        self.scat = self.ax.scatter(first_x, first_y, s=first_mass, c=c,
+                                    vmin=self.dist_vmin, vmax=self.dist_vmax)
 
         if self.direction_arrow:
             chosen_velocity = self.snapshots[self.start]['chosen_velocity']
@@ -408,6 +426,13 @@ class cluster_animator(object):
         this_x_data = self.snapshots[frame]['position'][:, self._xaxis_key_]/1000.0
         this_y_data = self.snapshots[frame]['position'][:, self._yaxis_key_]/1000.0
         this_mass = self.snapshots[frame]['mass']
+        if self.color_by_dist:
+            pos = self.snapshots[frame]['position']
+            med_pos = np.median(pos, axis=0)
+            diff = np.subtract(pos, med_pos)
+            diff_mag = np.linalg.norm(diff, axis=1)
+            c = diff_mag
+
         if self.mass_max is not None:
             keys = np.where(this_mass < self.mass_max)[0]
             this_x_data = this_x_data[keys]
@@ -443,6 +468,9 @@ class cluster_animator(object):
             pact = self._peculiar_actions_(this_actions)
             self.scat_pJr.set_offsets(np.c_[pact[:,2], pact[:,0]])
             self.scat_pJz.set_offsets(np.c_[pact[:,1], pact[:,0]])
+            if self.color_by_dist:
+                self.scat_pJr.set_color(c)
+                self.scat_pJz.set_color(c)
 
             x = self.traj[:,0]
             y = self.traj[:,1]
@@ -467,6 +495,8 @@ class cluster_animator(object):
         # data = np.array([this_x_data, this_y_data])
         scat.set_offsets(np.c_[this_x_data, this_y_data])
         scat.set_sizes(this_mass)
+        if self.color_by_dist:
+            scat.set_color(c)
         t = self.snapshots[frame]['time']
         self.ax.set_title("{:.2f}".format(t))
 
