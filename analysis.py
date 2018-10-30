@@ -306,13 +306,21 @@ class cluster_animator(object):
 
             self.ax_pJr.set_xlim(-pLz_bound, pLz_bound)
             self.ax_pJr.set_ylim(-pJr_bound, pJr_bound)
-            self.ax_pJr.set_xlabel('pLz')
-            self.ax_pJr.set_ylabel('pJr')
+            if self.normalize:
+                self.ax_pJr.set_xlabel(r'$\text{p}L_z$')
+                self.ax_pJr.set_ylabel(r'$\text{p}J_r$')
+            else:
+                self.ax_pJr.set_xlabel(r'$\Delta L_z\,[\text{kpc}\,\text{km/s}]$')
+                self.ax_pJr.set_ylabel(r'$\Delta J_r\,[\text{kpc}\,\text{km/s}]$')
 
             self.ax_pJz.set_xlim(-pLz_bound, pLz_bound)
             self.ax_pJz.set_ylim(-pJz_bound, pJz_bound)
-            self.ax_pJz.set_xlabel('pLz')
-            self.ax_pJz.set_ylabel('pJz')
+            if self.normalize:
+                self.ax_pJz.set_xlabel(r'$\text{p}L_z$')
+                self.ax_pJz.set_ylabel(r'$\text{p}J_z$')
+            else:
+                self.ax_pJz.set_xlabel(r'$\Delta L_z\,[\text{kpc}\,\text{km/s}]$')
+                self.ax_pJz.set_ylabel(r'$\Delta J_z\,[\text{kpc}\,\text{km/s}]$')
 
             self.ax_traj.set_xlabel('x [kpc]')
             self.ax_traj.set_ylabel('y [kpc]')
