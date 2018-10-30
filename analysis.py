@@ -297,10 +297,10 @@ class cluster_animator(object):
             self.ax_pJz.set_xlabel('pLz')
             self.ax_pJz.set_ylabel('pJz')
 
-            self.ax_traj.set_xlabel('x [pc]')
-            self.ax_traj.set_ylabel('y [pc]')
-            self.ax_traj_vert.set_xlabel('x [pc]')
-            self.ax_traj_vert.set_ylabel('z [pc]')
+            self.ax_traj.set_xlabel('x [kpc]')
+            self.ax_traj.set_ylabel('y [kpc]')
+            self.ax_traj_vert.set_xlabel('x [kpc]')
+            self.ax_traj_vert.set_ylabel('z [kpc]')
 
             first_actions = self.snapshots[self.start]['actions']
             pecact = self._peculiar_actions_(first_actions)
@@ -309,9 +309,9 @@ class cluster_animator(object):
 
             self.traj = \
                 np.array([self.snapshots[i]['chosen_position'] for i in range(len(self.snapshots))])
-            x = self.traj[:,0]/1000.0
-            y = self.traj[:,1]/1000.0
-            z = self.traj[:,2]/1000.0
+            x = self.traj[:,0]
+            y = self.traj[:,1]
+            z = self.traj[:,2]
             self.ax_traj.plot(x, y, c='k', alpha=0.5)
             self.ax_traj_vert.plot(x, z, c='k', alpha=0.5)
 
@@ -452,13 +452,13 @@ class cluster_animator(object):
             self.traj_vert_scat.set_offsets(np.transpose([x[frame], z[frame]]))
 
             if frame == 0:
-                x = x[frame]/1000.0
-                y = y[frame]/1000.0
-                z = z[frame]/1000.0
+                x = x[frame]
+                y = y[frame]
+                z = z[frame]
             else:
-                x = x[:frame]/1000.0
-                y = y[:frame]/1000.0
-                z = z[:frame]/1000.0
+                x = x[:frame]
+                y = y[:frame]
+                z = z[:frame]
             self.traj_current.set_xdata(x)
             self.traj_current.set_ydata(y)
             self.traj_vert_current.set_xdata(x)
