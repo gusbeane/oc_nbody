@@ -351,6 +351,8 @@ class cluster_animator(object):
         self.ax.axis('equal')
         self.scat = self.ax.scatter(first_x, first_y, s=first_mass, c=c,
                                     vmin=self.dist_vmin, vmax=self.dist_vmax)
+        if self.color_by_dist:
+            self.fig.colorbar(self.scat, ax=self.ax)
 
         if self.direction_arrow:
             chosen_velocity = self.snapshots[self.start]['chosen_velocity']
@@ -469,8 +471,8 @@ class cluster_animator(object):
             self.scat_pJr.set_offsets(np.c_[pact[:,2], pact[:,0]])
             self.scat_pJz.set_offsets(np.c_[pact[:,1], pact[:,0]])
             if self.color_by_dist:
-                self.scat_pJr.set_color(c)
-                self.scat_pJz.set_color(c)
+                self.scat_pJr.set_array(c)
+                self.scat_pJz.set_array(c)
 
             x = self.traj[:,0]
             y = self.traj[:,1]
@@ -496,7 +498,7 @@ class cluster_animator(object):
         scat.set_offsets(np.c_[this_x_data, this_y_data])
         scat.set_sizes(this_mass)
         if self.color_by_dist:
-            scat.set_color(c)
+            scat.set_array(c)
         t = self.snapshots[frame]['time']
         self.ax.set_title("{:.2f}".format(t))
 
