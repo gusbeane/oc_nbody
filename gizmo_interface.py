@@ -71,10 +71,12 @@ class gizmo_interface(object):
         options_reader.set_options(self)
         self.options_reader = options_reader
 
-        print(self.star_softening_in_pc)
-
         if not os.path.isdir(self.cache_directory):
             os.makedirs(self.cache_directory)
+
+        if self.axisymmetric:
+            self._gen_axisymmetric_()
+            return None
 
         self._read_snapshots_()
 
@@ -94,7 +96,16 @@ class gizmo_interface(object):
 
         self.grid._grid_evolved_kdtree_ = cKDTree(self.grid.evolved_grid)
 
-    def _read_snapshots_(self):
+    def _gen_axisymmetric_(self):
+        import gala.potential as gp
+        import gala.dynamics as gd
+        import astropy.units as u
+        self.gd = gd
+        self.mw = gp.MilkyWayPotential()
+        self.u = u
+        return None
+
+    def _read_snapshots_(self, first_only=False):
         # read in first snapshot, get rotation matrix
 
         # just gonna take a peak into the sim and see if we have it in cache
@@ -136,6 +147,9 @@ class gizmo_interface(object):
         self.first_snapshot_time_in_Myr =\
             self.first_snapshot.snapshot['time'] * 1000.0
 
+        if first_only:
+            return None
+
         # read in all snapshots,
         # but only the necessary quantities, and recenter
         self.snapshot_indices = range(self.startnum-self.num_prior,
@@ -167,14 +181,12 @@ class gizmo_interface(object):
                 gizmo.io.Read.read_snapshots(['star', 'gas', 'dark'],
                                              'index', self.snapshot_indices,
                                              properties=['position', 'id',
-                                                         'mass',
-                                                         'smooth.length'],
+                                                         'mass', 'velocity',
+                                                         'smooth.length',
+                                                         'form.scalefactor'],
                                              simulation_directory=
                                              self.simulation_directory,
-                                             assign_center=False)
-
-            for snap in self.snapshots:
-                self._assign_self_center_(snap)
+                                             assign_principal_axes=True)
 
             for i in range(len(self.snapshots)):
                 self.snapshots[i] = self._clean_Rmag_(self.snapshots[i])
@@ -258,12 +270,19 @@ class gizmo_interface(object):
         return time_in_Myr
 
     def _init_starting_star_interpolators_(self):
-        self.chosen_indices = [int(np.where(self.snapshots[i]['star']['id'] == self.chosen_id)[0])
-                               for i in range(len(self.snapshots)) ]
-        self.chosen_snapshot_positions = [self.snapshots[i]['star'].prop('host.distance.principal')\
-                    [self.chosen_indices[i]] for i in range(len(self.snapshots))]
-        self.chosen_snapshot_velocities = [self.star_snapshots[i]['star'].prop('host.velocity.principal')\
-                    [self.chosen_indices[i]] for i in range(len(self.snapshots))]
+        self.chosen_indices = []
+        self.chosen_snapshot_positions = []
+        self.chosen_snapshot_velocities = []
+
+        for i in range(len(self.snapshots)):
+            index = int(np.where(self.snapshots[i]['star']['id'] == self.chosen_id)[0])
+            self.chosen_indices.append(index)
+
+            position = self.snapshots[i]['star'].prop('host.distance.principal')[index]
+            velocity = self.snapshots[i]['star'].prop('host.velocity.principal')[index]
+            pos, vel = self._rotate_pos_vel_(position, velocity)
+            self.chosen_snapshot_positions.append(pos)
+            self.chosen_snapshot_velocities.append(vel)
 
         self.chosen_indices = np.array(self.chosen_indices)
         self.chosen_snapshot_positions = np.array(self.chosen_snapshot_positions)
@@ -271,6 +290,14 @@ class gizmo_interface(object):
 
         self.chosen_pos_interp = self._gen_pos_or_vel_interpolator_(self.chosen_snapshot_positions)
         self.chosen_vel_interp = self._gen_pos_or_vel_interpolator_(self.chosen_snapshot_velocities)
+
+    def _rotate_pos_vel_(self, p, v):
+        theta = np.arctan2(p[0], p[1]) - np.pi/2.0
+        ct = np.cos(theta)
+        st = np.sin(theta)
+        mat = np.array([[ct, -st, 0],[st, ct, 0], [0, 0, 1]])
+        return np.matmul(mat, p), np.matmul(mat, v)
+
 
     def _gen_pos_or_vel_interpolator_(self, pos_or_vel):
         interpolators = np.zeros(3).tolist()
@@ -529,6 +556,9 @@ class gizmo_interface(object):
 
     def evolve_model(self, time, timestep=None):
 
+        if self.axisymmetric:
+            return None
+
         this_t_in_Myr = time.value_in(units.Myr)
         self._evolve_starting_star_(this_t_in_Myr)
 
@@ -581,6 +611,16 @@ class gizmo_interface(object):
         xlist = xlist.value_in(units.kpc)
         ylist = ylist.value_in(units.kpc)
         zlist = zlist.value_in(units.kpc)
+
+        if self.axisymmetric:
+            pos = np.array([xlist, ylist, zlist]) * self.u.kpc
+            vel = np.zeros((3, len(xlist))) * u.km/u.s
+            points = self.gd.PhaseSpacePosition(pos, vel)
+            a = self.mw.acceleration(points).to_value(u.km/u.s/u.Myr)
+            ax = a[0] | units.kms/units.Myr
+            ay = a[0] | units.kms/units.Myr
+            az = a[0] | units.kms/units.Myr
+            return ax, ay, az
 
         if hasattr(xlist, '__iter__'):
             axlist = []

@@ -45,6 +45,16 @@ class options_reader(object):
         self._read_optional_option_('force_calculation', 'order', '5')
         self._read_optional_option_('force_calculation', 'eps', '1.0')
 
+        self._read_optional_option_('force_calculation', 'axisymmetric', 'false')
+        self.options['axisymmetric'] = self._convert_bool_(self.options['axisymmetric'])
+        if self.options['axisymmetric']:
+            self._read_required_option_('force_calculation', 'axi_Rinit')
+            self._read_optional_option_('force_calculation', 'axi_vcircfrac', 1.0)
+            self._read_optional_option_('force_calculation', 'axi_zinit', 0)
+            self.options['axi_Rinit'] = float(self.options['axi_Rinit'])
+            self.options['axi_vcircfrac'] = float(self.options['axi_vcircfrac'])
+            self.options['axi_zinit'] = float(self.options['axi_zinit'])
+
         # read in cluster parameters
         for opt in ['N', 'W0', 'Rcluster', 'softening',
                     'nbodycode', 'use_kroupa',

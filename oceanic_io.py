@@ -20,7 +20,8 @@ class snapshot_reader(object):
     def __init__(self, options_reader, galaxy_code):
         options_reader.set_options(self)
         self.frames = meta_array([])
-        self.frames.meta['ss_id'] = galaxy_code.chosen_id
+        if not self.axisymmetric:
+            self.frames.meta['ss_id'] = galaxy_code.chosen_id
         self.frames.meta['simulation_directory'] = galaxy_code.simulation_directory
 
     def process_snapshot(self, system, galaxy_code, com, i, time, final=None):
@@ -49,18 +50,19 @@ class snapshot_reader(object):
         position = np.transpose([x, y, z])
         velocity = np.transpose([vx, vy, vz])
 
-        chosen_position = galaxy_code.chosen_evolved_position * 1000.0
-        chosen_velocity = galaxy_code.chosen_evolved_velocity
-
         time = time.value_in(units.Myr)
 
         frame = {'time': time,
                  'position': position,
                  'velocity': velocity,
                  'mass': mass,
-                 'chosen_position': chosen_position,
-                 'chosen_velocity': chosen_velocity,
                  'com': com}
+
+        if not self.axisymmetric:
+            chosen_position = galaxy_code.chosen_evolved_position * 1000.0
+            chosen_velocity = galaxy_code.chosen_evolved_velocity
+            frame['chosen_position'] = chosen_position
+            frame['chosen_velocity'] = chosen_velocity
 
         return frame
 
@@ -72,7 +74,10 @@ def dump_interface(interface, directory_out='interface'):
     # delete stuff we won't ever need again
     del interface.first_snapshot
     del interface.snapshots
-    del interface.star_snapshots
+    try: # for backwards compatibility
+        del interface.star_snapshots
+    except:
+        pass
     del interface.first_ag
 
     # now dump grid piecemeal
