@@ -47,16 +47,21 @@ class gala_wrapper(object):
             poslist = poslist.copy()/1000.0
         points = self.gd.PhaseSpacePosition(np.transpose(poslist) * self.u.kpc,
                                             np.transpose(vlist) * self.u.km/self.u.s)
-        orbit = self.mw.integrate_orbit(points, dt=dt*self.u.Myr, t1=t1*self.u.Gyr,
-                                        t2=t2*self.u.Gyr)#, Integrator=self.integrator)
-        res = self.gd.actionangle.find_actions(orbit, N_max=N_max)
-        ans = res['actions'].to_value(self.u.kpc * self.u.km/self.u.s)
-        #if len(poslist)==1:
-        real_ans = np.array([ans[0], ans[2], -ans[1]]) # to match agama conventions
-        #else:
-            #real_ans = np.array([ans[:,0], ans[:,2], -ans[:,1]])
-        # Jr, Jz, Lz
-        return real_ans
+        Jr = []
+        Lz = []
+        Jz = []
+        for star in points:
+            orbit = self.mw.integrate_orbit(points, dt=dt*self.u.Myr, t1=t1*self.u.Gyr,
+                                            t2=t2*self.u.Gyr)#, Integrator=self.integrator)
+            res = self.gd.actionangle.find_actions(orbit, N_max=N_max)
+            ans = res['actions'].to_value(self.u.kpc * self.u.km/self.u.s)
+            Jr.append(ans[0])
+            Lz.append(-ans[1])
+            Jz.append(ans[2])
+        Jr = np.array(Jr)
+        Lz = np.array(Lz)
+        Jz = np.array(Jz)
+        return np.transpose([Jr, Jz, Lz])
 
 
 class agama_wrapper(object):
