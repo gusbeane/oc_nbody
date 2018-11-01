@@ -77,6 +77,7 @@ class gizmo_interface(object):
         if self.axisymmetric:
             self._read_snapshots_(first_only=True)
             self._gen_axisymmetric_()
+            return None
 
         self._read_snapshots_()
 
@@ -101,9 +102,9 @@ class gizmo_interface(object):
         import gala.dynamics as gd
         import astropy.units as u
         self.gd = gd
-        self._init_starting_star_()
         self.mw = gp.MilkyWayPotential()
         self.u = u
+        return None
 
     def _read_snapshots_(self, first_only=False):
         # read in first snapshot, get rotation matrix
