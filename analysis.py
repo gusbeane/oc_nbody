@@ -22,10 +22,14 @@ class gala_wrapper(object):
     def __init__(self, opt):
         import gala.potential as gp
         import gala.dynamics as gd
+        import gala.integrate as gi
         import astropy.units as u
+
+        self.integrator = gi.DOPRI853Integrator
 
         self.u = u
         self.mw = gp.MilkyWayPotential()
+        self.gd = gd
         opt.set_options(self)
         if not self.axisymmetric:
             raise Exception("gala wrapper is just for axisymmetric MW pot")
@@ -36,22 +40,23 @@ class gala_wrapper(object):
     def update_ss(self, ss_id, position=None, velocity=None):
         pass
 
-    def actions(self, poslist, vlist, add_ss=False, in_kpc=False):
+    def actions(self, poslist, vlist, add_ss=False, in_kpc=False,
+                dt=0.1, t1=0, t2=10, N_max=8):
+        # dt in Myr, t1,t2 in Gyr
         if not in_kpc:
             poslist = poslist.copy()/1000.0
-        points = gd.PhaseSpacePosition(poslist * self.u.kpc,
-                                       vlist * self.u.km/self.u.s)
-        with warnings.catch_warnings(record=True):
-            warnings.simplefilter("ignore")
-            orbit = self.mw.integrate_orbit(q, dt=self.dt, t1=self.tstart, t2=self.tend, Integrator=self.integrator)
-            res = gd.actionangle.find_actions(orbit, N_max=self.N_max)
-            ans = res['actions'].to_value(self.u.kpc * self.u.km/self.u.s)
-            if len(pos)==1:
-                real_ans = np.array([ans[0], ans[2], -ans[1]]) # to match agama conventions
-            else:
-                real_ans = np.array([ans[:,0], ans[:,2], -ans[:,1]])
-            # Jr, Jz, Lz
-            return real_ans
+        points = self.gd.PhaseSpacePosition(poslist * self.u.kpc,
+                                            vlist * self.u.km/self.u.s)
+        orbit = self.mw.integrate_orbit(points, dt=dt*self.u.Myr, t1=t1*self.u.Gyr,
+                                        t2=t2*self.u.Gyr, Integrator=self.integrator)
+        res = self.gd.actionangle.find_actions(orbit, N_max=N_max)
+        ans = res['actions'].to_value(self.u.kpc * self.u.km/self.u.s)
+        if len(poslist)==1:
+            real_ans = np.array([ans[0], ans[2], -ans[1]]) # to match agama conventions
+        else:
+            real_ans = np.array([ans[:,0], ans[:,2], -ans[:,1]])
+        # Jr, Jz, Lz
+        return real_ans
 
 
 class agama_wrapper(object):
@@ -385,7 +390,7 @@ class cluster_animator(object):
                                                 vmax=self.dist_vmax)
 
             if self.axisymmetric:
-                self.traj = ⁠\
+                self.traj = \
                     np.array([np.median(self.snapshots[i]['position'], axis=0)
                               for i in range(len(self.snapshots))])
             else:
