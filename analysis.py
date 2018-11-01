@@ -227,7 +227,8 @@ class cluster_animator(object):
                  direction_arrow=False, plot_panel=False,
                  pLz_bound=2.0, pJr_bound=0.6, pJz_bound=0.1, normalize=False,
                  plot_cluster_com=False, com_rcut=None, color_by_dist=True,
-                 dist_vmin = 0.0, dist_vmax=50.0, log_distance=False):
+                 dist_vmin = 0.0, dist_vmax=50.0, log_distance=False,
+                 axisymmetric=False):
 
         rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
         rc('text', usetex=True)
@@ -243,6 +244,7 @@ class cluster_animator(object):
         self.cmax = cmax
         self.dist_vmin = dist_vmin
         self.dist_vmax = dist_vmax
+        self.axisymmetric = axisymmetric
 
         self.direction_arrow = direction_arrow
         self.plot_panel = plot_panel
@@ -281,6 +283,10 @@ class cluster_animator(object):
         first_x = self.snapshots[self.start]['position'][:, self._xaxis_key_]
         first_y = self.snapshots[self.start]['position'][:, self._yaxis_key_]
         first_mass = self.snapshots[self.start]['mass']
+
+        if self.axisymmetric:
+            first_x = np.subtract(first_x, np.median(first_x, axis=0))
+            first_y = np.subtract(first_y, np.median(first_y, axis=0))
 
         if self.color_by_dist:
             pos = self.snapshots[self.start]['position']
@@ -336,8 +342,13 @@ class cluster_animator(object):
                                                 s=0.2, c=c, vmin=self.dist_vmin,
                                                 vmax=self.dist_vmax)
 
-            self.traj = \
-                np.array([self.snapshots[i]['chosen_position'] for i in range(len(self.snapshots))])
+            if self.axisymmetric:
+                self.traj = ⁠\
+                    np.array([np.median(self.snapshots[i]['position'], axis=0)
+                              for i in range(len(self.snapshots))])
+            else:
+                self.traj = \
+                    np.array([self.snapshots[i]['chosen_position'] for i in range(len(self.snapshots))])
             x = self.traj[:,0]
             y = self.traj[:,1]
             z = self.traj[:,2]
@@ -444,6 +455,10 @@ class cluster_animator(object):
         this_x_data = self.snapshots[frame]['position'][:, self._xaxis_key_]/1000.0
         this_y_data = self.snapshots[frame]['position'][:, self._yaxis_key_]/1000.0
         this_mass = self.snapshots[frame]['mass']
+        if self.axisymmetric:
+            this_x_data = np.subtract(this_x_data, np.median(this_x_data))
+            this_y_data = np.subtract(this_y_data, np.median(this_y_data))
+
         if self.color_by_dist:
             pos = self.snapshots[frame]['position']
             med_pos = np.median(pos, axis=0)
