@@ -45,16 +45,16 @@ class gala_wrapper(object):
         # dt in Myr, t1,t2 in Gyr
         if not in_kpc:
             poslist = poslist.copy()/1000.0
-        points = self.gd.PhaseSpacePosition(poslist * self.u.kpc,
-                                            vlist * self.u.km/self.u.s)
+        points = self.gd.PhaseSpacePosition(np.transpose(poslist) * self.u.kpc,
+                                            np.transpose(vlist) * self.u.km/self.u.s)
         orbit = self.mw.integrate_orbit(points, dt=dt*self.u.Myr, t1=t1*self.u.Gyr,
                                         t2=t2*self.u.Gyr)#, Integrator=self.integrator)
         res = self.gd.actionangle.find_actions(orbit, N_max=N_max)
         ans = res['actions'].to_value(self.u.kpc * self.u.km/self.u.s)
-        if len(poslist)==1:
-            real_ans = np.array([ans[0], ans[2], -ans[1]]) # to match agama conventions
-        else:
-            real_ans = np.array([ans[:,0], ans[:,2], -ans[:,1]])
+        #if len(poslist)==1:
+        real_ans = np.array([ans[0], ans[2], -ans[1]]) # to match agama conventions
+        #else:
+            #real_ans = np.array([ans[:,0], ans[:,2], -ans[:,1]])
         # Jr, Jz, Lz
         return real_ans
 
