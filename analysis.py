@@ -18,6 +18,41 @@ from oceanic.options import options_reader
 from amuse.units import units
 from tqdm import tqdm
 
+class gala_wrapper(object):
+    def __init__(self, opt):
+        import gala.potential as gp
+        import gala.dynamics as gd
+        import astropy.units as u
+
+        self.u = u
+        self.mw = gp.MilkyWayPotential()
+        opt.set_options(self)
+        if not self.axisymmetric:
+            raise Exception("gala wrapper is just for axisymmetric MW pot")
+
+    def update_index(self, index, ss_id=None, snap=None):
+        pass
+
+    def update_ss(self, ss_id, position=None, velocity=None):
+        pass
+
+    def actions(self, poslist, vlist, add_ss=False, in_kpc=False):
+        if not in_kpc:
+            poslist = poslist.copy()/1000.0
+        points = gd.PhaseSpacePosition(poslist * self.u.kpc,
+                                       vlist * self.u.km/self.u.s)
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("ignore")
+            orbit = self.mw.integrate_orbit(q, dt=self.dt, t1=self.tstart, t2=self.tend, Integrator=self.integrator)
+            res = gd.actionangle.find_actions(orbit, N_max=self.N_max)
+            ans = res['actions'].to_value(self.u.kpc * self.u.km/self.u.s)
+            if len(pos)==1:
+                real_ans = np.array([ans[0], ans[2], -ans[1]]) # to match agama conventions
+            else:
+                real_ans = np.array([ans[:,0], ans[:,2], -ans[:,1]])
+            # Jr, Jz, Lz
+            return real_ans
+
 
 class agama_wrapper(object):
     def __init__(self, opt):
@@ -123,14 +158,21 @@ class agama_wrapper(object):
 
 
 class snapshot_action_calculator(object):
-    def __init__(self, options, snapshot_file='cluster_snapshots.p',
-                 ss_id = None):
+    def __init__(self, options,
+                 snapshot_file='cluster_snapshots.p', ss_id=None):
         options.set_options(self)
-        self._ag_ = agama_wrapper(options)
+        if self.axisymmetric:
+            self._ag_ = gala_wrapper(options)
+        else:
+            self._ag_ = agama_wrapper(options)
+
         try:
             self.cluster = dill.load(open(snapshot_file, 'rb'))
         except:
             raise Exception('could not find snapshot file: ', snapshot_file)
+
+        if self.axisymmetric:
+            return None
 
         if ss_id is None:
             try:
