@@ -616,7 +616,11 @@ class gizmo_interface(object):
             pos = np.array([xlist, ylist, zlist]) * self.u.kpc
             vel = np.zeros((3, len(xlist))) * u.km/u.s
             points = self.gd.PhaseSpacePosition(pos, vel)
-            return self.mw.acceleration(points)
+            a = self.mw.acceleration(points).to_value(u.km/u.s/u.Myr)
+            ax = a[0] | units.kms/units.Myr
+            ay = a[0] | units.kms/units.Myr
+            az = a[0] | units.kms/units.Myr
+            return ax, ay, az
 
         if hasattr(xlist, '__iter__'):
             axlist = []
