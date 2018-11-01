@@ -54,7 +54,8 @@ def evolve_cluster_in_galaxy(options_file):
 
     for i, t in enumerate(tqdm(times)):
         system.evolve_model(t, timestep=timestep | units.Myr)
-        cluster.clean_ejections(system)
+        if not opt.options['axisymmetric']:
+            cluster.clean_ejections(system)
 
         bound = system.particles.bound_subset(unit_converter=converter)
         bound_com = bound.center_of_mass().value_in(units.kpc)
