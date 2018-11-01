@@ -40,6 +40,11 @@ star_char_mass = 0.048 ; characteristic softening mass [Msun]
 Rmax = 50.0         ; max R to retain particles for force calculation [kpc]
 theta = 0.5         ; opening angle for tree
 
+axisymmetric = false ; compute evolution in an axisymmetric potential (default: false)
+axi_Rinit = 8 ; axisymmetric initial radius [kpc] (required if axi)
+axi_vcircfrac = 1.05 ; what to multiply vcirc by for vinit (default: 1)
+axi_zinit = 0.500 ; initial height [kpc] (default: 0)
+
 # # interpolation parameters # #
 nclose = 150 ; number of close points to use in interpolation (default: 150)
 basis = phs3 ; basis for rbf (default: phs3)

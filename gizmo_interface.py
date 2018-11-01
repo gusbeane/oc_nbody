@@ -71,10 +71,12 @@ class gizmo_interface(object):
         options_reader.set_options(self)
         self.options_reader = options_reader
 
-        print(self.star_softening_in_pc)
-
         if not os.path.isdir(self.cache_directory):
             os.makedirs(self.cache_directory)
+
+        if self.axisymmetric:
+            self._read_snapshots_(first_only=True)
+            self._gen_axisymmetric_()
 
         self._read_snapshots_()
 
@@ -94,7 +96,16 @@ class gizmo_interface(object):
 
         self.grid._grid_evolved_kdtree_ = cKDTree(self.grid.evolved_grid)
 
-    def _read_snapshots_(self):
+    def _gen_axisymmetric_(self):
+        import gala.potential as gp
+        import gala.dynamics as gd
+        import astropy.units as u
+        self.gd = gd
+        self._init_starting_star_()
+        self.mw = gp.MilkyWayPotential()
+        self.u = u
+
+    def _read_snapshots_(self, first_only=False):
         # read in first snapshot, get rotation matrix
 
         # just gonna take a peak into the sim and see if we have it in cache
@@ -135,6 +146,9 @@ class gizmo_interface(object):
         # store some other relevant information
         self.first_snapshot_time_in_Myr =\
             self.first_snapshot.snapshot['time'] * 1000.0
+
+        if self.first_only:
+            return None
 
         # read in all snapshots,
         # but only the necessary quantities, and recenter
@@ -542,6 +556,9 @@ class gizmo_interface(object):
 
     def evolve_model(self, time, timestep=None):
 
+        if self.axisymmetric:
+            return None
+
         this_t_in_Myr = time.value_in(units.Myr)
         self._evolve_starting_star_(this_t_in_Myr)
 
@@ -594,6 +611,12 @@ class gizmo_interface(object):
         xlist = xlist.value_in(units.kpc)
         ylist = ylist.value_in(units.kpc)
         zlist = zlist.value_in(units.kpc)
+
+        if self.axisymmetric:
+            pos = np.array([xlist, ylist, zlist]) * self.u.kpc
+            vel = np.zeros((len(xlist), 3)) * u.km/u.s
+            points = self.gd.PhaseSpacePosition(pos, vel)
+            return self.mw.acceleration(points)
 
         if hasattr(xlist, '__iter__'):
             axlist = []
