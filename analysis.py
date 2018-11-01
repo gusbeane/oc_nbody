@@ -53,7 +53,7 @@ class gala_wrapper(object):
         for star in points:
             orbit = self.mw.integrate_orbit(star, dt=dt*self.u.Myr, t1=t1*self.u.Gyr,
                                             t2=t2*self.u.Gyr)#, Integrator=self.integrator)
-            res = self.gd.actionangle.find_actions(star, N_max=N_max)
+            res = self.gd.actionangle.find_actions(orbit, N_max=N_max)
             ans = res['actions'].to_value(self.u.kpc * self.u.km/self.u.s)
             Jr.append(ans[0])
             Lz.append(-ans[1])
