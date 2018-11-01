@@ -25,7 +25,7 @@ class gala_wrapper(object):
         import gala.integrate as gi
         import astropy.units as u
 
-        self.integrator = gi.DOPRI853Integrator
+        # self.integrator = gi.DOPRI853Integrator
 
         self.u = u
         self.mw = gp.MilkyWayPotential()
@@ -41,14 +41,14 @@ class gala_wrapper(object):
         pass
 
     def actions(self, poslist, vlist, add_ss=False, in_kpc=False,
-                dt=0.1, t1=0, t2=10, N_max=8):
+                dt=0.5, t1=0, t2=5, N_max=8):
         # dt in Myr, t1,t2 in Gyr
         if not in_kpc:
             poslist = poslist.copy()/1000.0
         points = self.gd.PhaseSpacePosition(poslist * self.u.kpc,
                                             vlist * self.u.km/self.u.s)
         orbit = self.mw.integrate_orbit(points, dt=dt*self.u.Myr, t1=t1*self.u.Gyr,
-                                        t2=t2*self.u.Gyr, Integrator=self.integrator)
+                                        t2=t2*self.u.Gyr)#, Integrator=self.integrator)
         res = self.gd.actionangle.find_actions(orbit, N_max=N_max)
         ans = res['actions'].to_value(self.u.kpc * self.u.km/self.u.s)
         if len(poslist)==1:
