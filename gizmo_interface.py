@@ -147,7 +147,7 @@ class gizmo_interface(object):
         self.first_snapshot_time_in_Myr =\
             self.first_snapshot.snapshot['time'] * 1000.0
 
-        if self.first_only:
+        if first_only:
             return None
 
         # read in all snapshots,
