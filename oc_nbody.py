@@ -23,6 +23,19 @@ def evolve_cluster_in_galaxy(options_file):
     cluster_code = cluster.code
     galaxy_code = gizmo_interface(opt)
 
+    if opt.options['axisymmetric']:
+        import astropy.units as u
+        import gala.dynamics as gd
+        import gala.potential as gp
+        pos = [opt.options['axi_Rinit'], 0, 0] * u.kpc
+        vel = [0, 0, 0] * u.km/u.s
+        mw = gp.MilkyWayPotential()
+        phase = gd.PhaseSpacePosition(pos, vel)
+        vc = mw.circular_velocity(phase).to_value(u.km/u.s) | units.kms
+
+        cluster_code.particles.x += opt.options['axi_Rinit'] | units.kpc
+        cluster_code.particles.vy += vc
+
     snap_reader = snapshot_reader(opt, galaxy_code)
 
     stars = cluster_code.particles.copy()
