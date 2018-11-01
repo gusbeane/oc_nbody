@@ -614,7 +614,7 @@ class gizmo_interface(object):
 
         if self.axisymmetric:
             pos = np.array([xlist, ylist, zlist]) * self.u.kpc
-            vel = np.zeros((len(xlist), 3)) * u.km/u.s
+            vel = np.zeros((3, len(xlist))) * u.km/u.s
             points = self.gd.PhaseSpacePosition(pos, vel)
             return self.mw.acceleration(points)
 
