@@ -75,6 +75,7 @@ class gizmo_interface(object):
             os.makedirs(self.cache_directory)
 
         if self.axisymmetric:
+            self._read_snapshots_(first_only=True)
             self._gen_axisymmetric_()
             return None
 
@@ -97,12 +98,36 @@ class gizmo_interface(object):
         self.grid._grid_evolved_kdtree_ = cKDTree(self.grid.evolved_grid)
 
     def _gen_axisymmetric_(self):
-        import gala.potential as gp
-        import gala.dynamics as gd
-        import astropy.units as u
-        self.gd = gd
-        self.mw = gp.MilkyWayPotential()
-        self.u = u
+        import agama
+        potential_cache_file = self.cache_directory + '/potential_id'+str(index)
+        potential_cache_file += '_' + self.sim_name + '_pot'
+        try:
+            self.potential = agama.Potential(file=potential_cache_file)
+        except:
+            star_position = self.first_snapshot['star'].prop('host.distance.principal')
+            gas_position = self.first_snapshot['gas'].prop('host.distance.principal')
+            dark_position = self.first_snapshot['dark'].prop('host.distance.principal')
+
+            star_mass = self.first_snapshot['star']['mass']
+            gas_mass = self.first_snapshot['gas']['mass']
+            dark_mass = self.first_snapshot['dark']['mass']
+
+
+
+            position = np.concatenate((star_position, gas_position))
+            mass = np.concatenate((star_mass, gas_mass))
+
+            #TODO make these user-controllable
+            self.pdark = agama.Potential(type="Multipole",
+                                        particles=(dark_position, dark_mass),
+                                        symmetry='a', gridsizeR=20, lmax=2)
+            self.pbar = agama.Potential(type="CylSpline",
+                                        particles=(position, mass),
+                                        symmetry='a', gridsizer=20, gridsizez=20,
+                                        mmax=0, Rmin=0.2,
+                                        Rmax=50, Zmin=0.02, Zmax=10)
+            self.potential = agama.Potential(self.pdark, self.pbar)
+            self.potential.export(potential_cache_file)
         return None
 
     def _read_snapshots_(self, first_only=False):
@@ -613,13 +638,16 @@ class gizmo_interface(object):
         zlist = zlist.value_in(units.kpc)
 
         if self.axisymmetric:
-            pos = np.array([xlist, ylist, zlist]) * self.u.kpc
-            vel = np.zeros((3, len(xlist))) * u.km/u.s
-            points = self.gd.PhaseSpacePosition(pos, vel)
-            a = self.mw.acceleration(points).to_value(u.km/u.s/u.Myr)
-            ax = a[0] | units.kms/units.Myr
-            ay = a[0] | units.kms/units.Myr
-            az = a[0] | units.kms/units.Myr
+            pos = np.transpose([xlist, ylist, zlist])
+            acc = self.potential.force(pos)
+            if len(pos)==1:
+                ax = acc[0] | (units.kms)**2/units.kpc
+                ay = acc[1] | (units.kms)**2/units.kpc
+                az = acc[2] | (units.kms)**2/units.kpc
+            else:
+                ax = acc[:,0] | (units.kms)**2/units.kpc
+                ay = acc[:,1] | (units.kms)**2/units.kpc
+                az = acc[:,2] | (units.kms)**2/units.kpc
             return ax, ay, az
 
         if hasattr(xlist, '__iter__'):
