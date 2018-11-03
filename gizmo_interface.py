@@ -99,7 +99,7 @@ class gizmo_interface(object):
 
     def _gen_axisymmetric_(self):
         import agama
-        potential_cache_file = self.cache_directory + '/potential_id'+str(index)
+        potential_cache_file = self.cache_directory + '/potential_id'+str(self.startnum)
         potential_cache_file += '_' + self.sim_name + '_pot'
         try:
             self.potential = agama.Potential(file=potential_cache_file)
