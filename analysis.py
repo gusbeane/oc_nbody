@@ -72,7 +72,7 @@ class agama_wrapper(object):
             self.pbar = agama.Potential(type="CylSpline",
                                         particles=(position, mass),
                                         gridsizer=20, gridsizez=20,
-                                        mmax=0, Rmin=0.2,
+                                        mmax=0, Rmin=0.2, symmetry='a',
                                         Rmax=50, Zmin=0.02, Zmax=10)
             self.potential = agama.Potential(self.pdark, self.pbar)
             self.potential.export(potential_cache_file)
