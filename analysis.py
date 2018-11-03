@@ -47,7 +47,7 @@ class agama_wrapper(object):
                                              self.simulation_directory)
             self.sim_name = head['simulation.name'].replace(" ", "_")
 
-        potential_cache_file = self.cache_directory + '/potential_id'+str(index)
+        potential_cache_file = self.cache_directory + '/potential_id'+str(self.startnum)
         potential_cache_file += '_' + self.sim_name + '_pot'
         try:
             self.potential = agama.Potential(file=potential_cache_file)
