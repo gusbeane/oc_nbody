@@ -51,10 +51,13 @@ class gala_wrapper(object):
         Lz = []
         Jz = []
         for star in points:
-            orbit = self.mw.integrate_orbit(star, dt=dt*self.u.Myr, t1=t1*self.u.Gyr,
+            try: 
+                orbit = self.mw.integrate_orbit(star, dt=dt*self.u.Myr, t1=t1*self.u.Gyr,
                                             t2=t2*self.u.Gyr)#, Integrator=self.integrator)
-            res = self.gd.actionangle.find_actions(orbit, N_max=N_max)
-            ans = res['actions'].to_value(self.u.kpc * self.u.km/self.u.s)
+                res = self.gd.actionangle.find_actions(orbit, N_max=N_max)
+                ans = res['actions'].to_value(self.u.kpc * self.u.km/self.u.s)
+            except:
+                ans = [np.nan, np.nan, np.nan]
             Jr.append(ans[0])
             Lz.append(-ans[1])
             Jz.append(ans[2])
