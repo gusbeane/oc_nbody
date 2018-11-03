@@ -18,7 +18,6 @@ from oceanic.options import options_reader
 from amuse.units import units
 from tqdm import tqdm
 
-
 class agama_wrapper(object):
     def __init__(self, opt):
         opt.set_options(self)
@@ -123,14 +122,18 @@ class agama_wrapper(object):
 
 
 class snapshot_action_calculator(object):
-    def __init__(self, options, snapshot_file='cluster_snapshots.p',
-                 ss_id = None):
+    def __init__(self, options,
+                 snapshot_file='cluster_snapshots.p', ss_id=None):
         options.set_options(self)
         self._ag_ = agama_wrapper(options)
+
         try:
             self.cluster = dill.load(open(snapshot_file, 'rb'))
         except:
             raise Exception('could not find snapshot file: ', snapshot_file)
+
+        if self.axisymmetric:
+            return None
 
         if ss_id is None:
             try:
@@ -210,8 +213,9 @@ class snapshot_action_calculator(object):
     def all_actions(self, fileout='cluster_snapshots_actions.p'):
         self._ag_.update_index(self.startnum, ss_id=self.ss_id)
         for i,cl in enumerate(tqdm(self.cluster)):
-            self._ag_.update_ss(self.ss_id, position=cl['chosen_position']/1000.0,
-                                velocity=cl['chosen_velocity'])
+            if not self.axisymmetric:
+                self._ag_.update_ss(self.ss_id, position=cl['chosen_position']/1000.0,
+                                    velocity=cl['chosen_velocity'])
             actions = self._ag_.actions(cl['position'], cl['velocity'],
                                         add_ss=True)
             self.cluster[i]['actions'] = actions
@@ -343,7 +347,7 @@ class cluster_animator(object):
                                                 vmax=self.dist_vmax)
 
             if self.axisymmetric:
-                self.traj = ⁠\
+                self.traj = \
                     np.array([np.median(self.snapshots[i]['position'], axis=0)
                               for i in range(len(self.snapshots))])
             else:
