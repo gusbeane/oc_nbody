@@ -508,7 +508,7 @@ class cluster_animator(object):
             this_actions = self.snapshots[frame]['actions']
             pact = self._peculiar_actions_(this_actions)
             self.scat_pJr.set_offsets(np.c_[pact[:,2], pact[:,0]])
-            self.scat_pJz.set_offsets(np.c_[pact[:,1], pact[:,0]])
+            self.scat_pJz.set_offsets(np.c_[pact[:,2], pact[:,1]])
             if self.color_by_dist:
                 self.scat_pJr.set_array(c)
                 self.scat_pJz.set_array(c)
