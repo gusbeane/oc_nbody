@@ -212,12 +212,13 @@ class snapshot_action_calculator(object):
 
     def all_actions(self, fileout='cluster_snapshots_actions.p'):
         self._ag_.update_index(self.startnum, ss_id=self.ss_id)
+        add_ss = not self.axisymmetric # if axi, we don't want to add ss
         for i,cl in enumerate(tqdm(self.cluster)):
             if not self.axisymmetric:
                 self._ag_.update_ss(self.ss_id, position=cl['chosen_position']/1000.0,
                                     velocity=cl['chosen_velocity'])
             actions = self._ag_.actions(cl['position'], cl['velocity'],
-                                        add_ss=True)
+                                        add_ss=add_ss)
             self.cluster[i]['actions'] = actions
         dill.dump(self.cluster, open(fileout, 'wb'))
 
