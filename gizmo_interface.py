@@ -9,11 +9,14 @@ from oceanic.grid_cartesian import grid
 from amuse.units import units
 from oceanic.options import options_reader
 from oceanic.analysis import agama_wrapper
+from oceanic.oc_code import agama_interpolator
 import pickle
 
 from pykdgrav import ConstructKDTree, GetAccelParallel
 from astropy.constants import G as G_astropy
 import astropy.units as u
+
+import agama
 
 from multiprocessing import Pool
 
@@ -71,12 +74,19 @@ class gizmo_interface(object):
         options_reader.set_options(self)
         self.options_reader = options_reader
 
+        self.snapshot_indices = range(self.startnum-self.num_prior,
+                                self.endnum+1)
+        self.initial_key = self.num_prior
+
         if not os.path.isdir(self.cache_directory):
             os.makedirs(self.cache_directory)
 
         if self.axisymmetric:
             self._read_snapshots_(first_only=True)
-            self._gen_axisymmetric_()
+            if self.axisymmetric_tevolve:
+                self._gen_axisymmetric_(all_snaps=True)
+            else:
+                self._gen_axisymmetric_()
             return None
 
         self._read_snapshots_()
@@ -97,38 +107,65 @@ class gizmo_interface(object):
 
         self.grid._grid_evolved_kdtree_ = cKDTree(self.grid.evolved_grid)
 
-    def _gen_axisymmetric_(self):
-        import agama
-        potential_cache_file = self.cache_directory + '/potential_id'+str(self.startnum)
+    def _pot_cache_file_(self, index):
+        potential_cache_file = self.cache_directory + '/potential_id'+str(index)
         potential_cache_file += '_' + self.sim_name + '_pot'
-        try:
-            self.potential = agama.Potential(file=potential_cache_file)
-        except:
-            star_position = self.first_snapshot['star'].prop('host.distance.principal')
-            gas_position = self.first_snapshot['gas'].prop('host.distance.principal')
-            dark_position = self.first_snapshot['dark'].prop('host.distance.principal')
+        return potential_cache_file
 
-            star_mass = self.first_snapshot['star']['mass']
-            gas_mass = self.first_snapshot['gas']['mass']
-            dark_mass = self.first_snapshot['dark']['mass']
+    def _gen_axisymmetric_(self, all_snaps=False):
+        import agama
+        if all_snaps:
+            pot_file_list = []
+            for index in self.snapshot_indices:
+                pot_file_list.append(self._pot_cache_file_(index))
+        else:
+            pot_file_list = (self._pot_cache_file_(self.startnum),)
 
+        for file in pot_file_list:
+            try:
+                self.pdark = agama.Potential(file=file)
+                self.pbar = agama.Potential(file=file)
+            except:
+                star_position = self.snapshots[index]['star'].prop('host.distance.principal')
+                gas_position = self.snapshots[index]['gas'].prop('host.distance.principal')
+                dark_position = self.snapshots[index]['dark'].prop('host.distance.principal')
 
+                star_mass = self.snapshots[index]['star']['mass']
+                gas_mass = self.snapshots[index]['gas']['mass']
+                dark_mass = self.snapshots[index]['dark']['mass']
 
-            position = np.concatenate((star_position, gas_position))
-            mass = np.concatenate((star_mass, gas_mass))
+                position = np.concatenate((star_position, gas_position))
+                mass = np.concatenate((star_mass, gas_mass))
 
-            #TODO make these user-controllable
-            self.pdark = agama.Potential(type="Multipole",
-                                        particles=(dark_position, dark_mass),
-                                        symmetry='a', gridsizeR=20, lmax=2)
-            self.pbar = agama.Potential(type="CylSpline",
-                                        particles=(position, mass),
-                                        symmetry='a', gridsizer=20, gridsizez=20,
-                                        mmax=0, Rmin=0.2,
-                                        Rmax=50, Zmin=0.02, Zmax=10)
-            self.potential = agama.Potential(self.pdark, self.pbar)
-            self.potential.export(potential_cache_file)
+                #TODO make these user-controllable
+                self.pdark = agama.Potential(type="Multipole",
+                                            particles=(dark_position, dark_mass),
+                                            symmetry='a', gridsizeR=20, lmax=2)
+                self.pbar = agama.Potential(type="CylSpline",
+                                            particles=(position, mass),
+                                            symmetry='a', gridsizer=20, gridsizez=20,
+                                            mmax=0, Rmin=0.2,
+                                            Rmax=50, Zmin=0.02, Zmax=10)
+                self.pdark.export(file+'_dark')
+                self.pbar.export(file+'_bar')
+                self.potential = agama.Potential(self.pdark, self.pbar)
+                self.potential.export(file)
+
+        if self.axisymmetric_tevolve:
+            self._gen_agama_interpolator_()
+
         return None
+
+    def _gen_agama_interpolator_(self):
+        bar_fnames = [self._pot_cache_file_(idx)+'_bar' for idx in self.snapshot_indices]
+        dark_fnames = [self._pot_cache_file_(idx)+'_dark' for idx in self.snapshot_indices]
+        self.bar_agamaint = agama_interpolator(bar_fnames, self.time_in_Myr)
+        self.dark_agamaint = agama_interpolator(dark_fnames, self.time_in_Myr)
+
+    def _agama_potential_(self, t):
+        bar_pot = agama.Potential(file=self.bar_agamaint(t))
+        dark_pot = agama.Potential(file=self.dark_agamaint(t))
+        self.potential = agama.Potential(bar_pot, dark_pot)
 
     def _read_snapshots_(self, first_only=False):
         # read in first snapshot, get rotation matrix
@@ -177,9 +214,7 @@ class gizmo_interface(object):
 
         # read in all snapshots,
         # but only the necessary quantities, and recenter
-        self.snapshot_indices = range(self.startnum-self.num_prior,
-                                      self.endnum+1)
-        self.initial_key = self.num_prior
+
 
         # # # # # # # # # # # # # # # # # # # # # # #
         #                                           #
@@ -580,11 +615,14 @@ class gizmo_interface(object):
         self.grid.evolved_acceleration_z = np.array(evolved_acceleration_z)
 
     def evolve_model(self, time, timestep=None):
+        this_t_in_Myr = time.value_in(units.Myr)
 
         if self.axisymmetric:
+            if self.axisymmetric_tevolve:
+                self.potential = self._agama_potential_(this_t_in_Myr)
             return None
 
-        this_t_in_Myr = time.value_in(units.Myr)
+
         self._evolve_starting_star_(this_t_in_Myr)
 
         position = np.array([0, 0, 0])

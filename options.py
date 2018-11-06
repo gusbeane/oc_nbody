@@ -55,6 +55,9 @@ class options_reader(object):
             self.options['axi_vcircfrac'] = float(self.options['axi_vcircfrac'])
             self.options['axi_zinit'] = float(self.options['axi_zinit'])
 
+            self._read_optional_option_('force_calculation', 'axisymmetric_tevolve', 'false')
+            self.options['axisymmetric_tevolve'] = self._convert_bool_(self.options['axisymmetric_tevolve'])
+
         # read in cluster parameters
         for opt in ['N', 'W0', 'Rcluster', 'softening',
                     'nbodycode', 'use_kroupa',

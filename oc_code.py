@@ -172,7 +172,7 @@ class agama_interpolator(object):
             interp_frame[k] = k_int
         self._interp_frame_ = interp_frame
 
-    def _eval_interpolators_(self, t):
+    def __call__(self, t):
         eval_frame = self._dframes_[0].copy()
         for k in self._keys_:
             for i,j in np.shape(eval_frame[k]['data_block']):
@@ -180,6 +180,7 @@ class agama_interpolator(object):
                     interpolate.splev(t, self._interp_frame_[k][i][j])
 
         self._dump_(eval_frame, self._fout_)
+        return self._fout_
 
 class oc_code(object):
     def __init__(self, options_reader):

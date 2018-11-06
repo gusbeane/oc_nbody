@@ -45,6 +45,8 @@ axi_Rinit = 8 ; axisymmetric initial radius [kpc] (required if axi)
 axi_vcircfrac = 1.05 ; what to multiply vcirc by for vinit (default: 1)
 axi_zinit = 0.500 ; initial height [kpc] (default: 0)
 
+axisymmetric_tevolve = false ; time evolve axisymm pot (default: false)
+
 # # interpolation parameters # #
 nclose = 150 ; number of close points to use in interpolation (default: 150)
 basis = phs3 ; basis for rbf (default: phs3)
