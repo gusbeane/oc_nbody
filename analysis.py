@@ -259,7 +259,8 @@ class snapshot_action_calculator(object):
             np.save('cluster_snapshots_actions.npy', self.cluster)
 
     def all_actions(self, fileout='cluster_snapshots_actions.p'):
-        self._ag_.update_index(self.startnum, ss_id=self.ss_id)
+        if not self.axisymmetric:
+            self._ag_.update_index(self.startnum, ss_id=self.ss_id)
         add_ss = not self.axisymmetric # if axi, we don't want to add ss
         for i,cl in enumerate(tqdm(self.cluster)):
             if not self.axisymmetric:
