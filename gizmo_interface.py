@@ -124,8 +124,8 @@ class gizmo_interface(object):
 
         for i,file in enumerate(pot_file_list):
             try:
-                self.pdark = agama.Potential(file=file)
-                self.pbar = agama.Potential(file=file)
+                self.pdark = agama.Potential(file=file+'_dark')
+                self.pbar = agama.Potential(file=file+'_bar')
             except:
                 star_position = self.snapshots[i]['star'].prop('host.distance.principal')
                 gas_position = self.snapshots[i]['gas'].prop('host.distance.principal')
