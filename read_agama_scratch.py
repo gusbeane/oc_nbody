@@ -1,15 +1,18 @@
 import numpy as np
+from scipy import interpolate
 
 
 class agama_interpolator(object):
     def __init__(self, fnames, times):
         self._fnames_ = fnames
         self._times_ = times
+        self._fout_ = '_interpolate_' + str(np.random.randint(2**63)) + self._fnames_[0]
 
         self._dframes_ = []
         for f in fnames:
             self._dframes_.append(self._read_gen_pot_(f))
-        self._gen_interpolators_()
+        #self._keys_ = self._dframes_[0].keys().tolist().remove('options')
+        #self._gen_interpolators_()
 
     def _read_gen_pot_(self, fname):
         fp = open(fname, 'r')
@@ -83,6 +86,14 @@ class agama_interpolator(object):
                     raise Exception("Agama potential file not in an expected format")
         return data_frame
 
+    def _dump_(self, frame, fout):
+        if frame['type'] == 'Multipole':
+            self._dump_multipole_(frame, fout)
+        elif frame['type'] == 'CylSpline':
+            self._dump_cylspline_(frame, fout)
+        else:
+            raise Exception("not recognized type:", frame['type'])
+
     def _dump_multipole_(self, frame, fout):
         fo = open(fout, 'w')
         fo.write('Multipole\n')
@@ -145,6 +156,27 @@ class agama_interpolator(object):
 
     def _gen_interpolators_(self):
         t = self._times_
+        keys = self._dframes_[0].keys()
+        interp_frame = {}
+        for k in self._keys_:
+            all_blocks = np.array([self._dframes_[i][k]['data_block']
+                                   for i in range(len(self._dframes_))])
+            sp = np.shape(all_blocks)[1:]
+            k_int = np.zeros(sp).tolist()
+            for i,j in sp:
+                k_int[i][j] = interpolate.splrep(t, all_blocks[:, i, j])
+            interp_frame[k] = k_int
+        self._interp_frame_ = interp_frame
+
+    def _eval_interpolators_(self, t):
+        eval_frame = self._dframes_[0].copy()
+        for k in self._keys_:
+            for i,j in np.shape(eval_frame[k]['data_block']):
+                eval_frame[k]['data_block'][i][j] = \
+                    interpolate.splev(t, self._interp_frame_[k][i][j])
+
+        self._dump_(eval_frame, self._fout_)
+
 
 
 # if __name__ == '__main__':
