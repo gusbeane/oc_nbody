@@ -85,6 +85,7 @@ class gizmo_interface(object):
             if self.axisymmetric_tevolve:
                 self._read_snapshots_()
                 self._gen_axisymmetric_(all_snaps=True)
+                self.evolve_model(0 | units.Myr)
             else:
                 self._read_snapshots_(first_only=True)
                 self._gen_axisymmetric_()
