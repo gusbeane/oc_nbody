@@ -16,7 +16,7 @@ class agama_interpolator(object):
         for f in fnames:
             self._dframes_.append(self._read_gen_pot_(f))
         self._keys_ = list(self._dframes_[0].keys()).remove('options')
-        self._gen_interpolators_()
+        #self._gen_interpolators_()
 
     def _read_gen_pot_(self, fname):
         fp = open(fname, 'r')
@@ -241,19 +241,21 @@ class oc_code(object):
             return None
 
 
-if __name__ == '__main__':
-    import sys
-    options_file = sys.argv[1]
-    opt = options_reader(options_file)
-    oc = oc_code(opt)
-
 # if __name__ == '__main__':
-#     fp = open('potential_id546_m12i_r7100_pot_1', 'r')
-#     fl = fp.readline()
-#
-#     if fl.replace('\n','')=='Multipole':
-#         d = _read_multipole_(fp)
-#         _dump_multipole_(d, 'test.txt')
-#     elif fl.replace('\n','')=='CylSpline':
-#         d = _read_cylspline_(fp)
-#         l = _dump_cylspline_(d, 'test_1.txt')
+#     import sys
+#     options_file = sys.argv[1]
+#     opt = options_reader(options_file)
+#     oc = oc_code(opt)
+
+if __name__ == '__main__':
+    fnames = ['potential_id546_m12i_r7100_pot_1', 'potential_id580_m12i_r7100_pot_1']
+    ai = agama_interpolator(fnames, times=[0, 20])
+    # fp = open('potential_id546_m12i_r7100_pot_1', 'r')
+    # fl = fp.readline()
+    #
+    # if fl.replace('\n','')=='Multipole':
+    #     d = _read_multipole_(fp)
+    #     _dump_multipole_(d, 'test.txt')
+    # elif fl.replace('\n','')=='CylSpline':
+    #     d = _read_cylspline_(fp)
+    #     l = _dump_cylspline_(d, 'test_1.txt')
