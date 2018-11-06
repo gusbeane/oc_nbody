@@ -10,7 +10,7 @@ class agama_interpolator(object):
     def __init__(self, fnames, times):
         self._fnames_ = fnames
         self._times_ = times
-        self._fout_ = '_interpolate_' + str(np.random.randint(2**63)) + self._fnames_[0]
+        self._fout_ =  self._fnames_[0] + '_interpolate_' + str(np.random.randint(2**63))
 
         self._dframes_ = []
         for f in fnames:
