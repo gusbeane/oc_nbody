@@ -10,3 +10,5 @@ cache*
 test_nokroupa
 test_oldkroupa
 .vscode
+potential_id*
+test*.txt
