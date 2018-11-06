@@ -226,6 +226,9 @@ class snapshot_action_calculator(object):
             if not self.axisymmetric:
                 self._ag_.update_ss(self.ss_id, position=cl['chosen_position']/1000.0,
                                     velocity=cl['chosen_velocity'])
+            else:
+                if self.axisymmetric_tevolve:
+                    self._ag_.update_t(cl['time'])
             actions = self._ag_.actions(cl['position'], cl['velocity'],
                                         add_ss=add_ss)
             self.cluster[i]['actions'] = actions
