@@ -178,8 +178,8 @@ class agama_interpolator(object):
         eval_frame = self._dframes_[0].copy()
         for k in self._keys_:
             sp = np.shape(eval_frame[k]['data_block'])
-            for i in sp[0]:
-                for j in sp[1]:
+            for i in range(sp[0]):
+                for j in range(sp[1]):
                     eval_frame[k]['data_block'][i][j] = \
                         interpolate.splev(t, self._interp_frame_[k][i][j])
 
