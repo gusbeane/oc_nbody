@@ -18,7 +18,7 @@ class agama_interpolator(object):
         self._keys_ = list(self._dframes_[0].keys())
         self._keys_.remove('options')
         self._keys_.remove('type')
-        #self._gen_interpolators_()
+        self._gen_interpolators_()
 
     def _read_gen_pot_(self, fname):
         fp = open(fname, 'r')
