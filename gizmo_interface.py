@@ -82,10 +82,11 @@ class gizmo_interface(object):
             os.makedirs(self.cache_directory)
 
         if self.axisymmetric:
-            self._read_snapshots_(first_only=True)
             if self.axisymmetric_tevolve:
+                self._read_snapshots_()
                 self._gen_axisymmetric_(all_snaps=True)
             else:
+                self._read_snapshots_(first_only=True)
                 self._gen_axisymmetric_()
             return None
 
