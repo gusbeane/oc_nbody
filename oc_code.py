@@ -169,8 +169,9 @@ class agama_interpolator(object):
                                    for i in range(len(self._dframes_))])
             sp = np.shape(all_blocks)[1:]
             k_int = np.zeros(sp).tolist()
-            for i,j in sp:
-                k_int[i][j] = interpolate.splrep(t, all_blocks[:, i, j])
+            for i in range(sp[0]):
+                for j in range(sp[1]):
+                    k_int[i][j] = interpolate.splrep(t, all_blocks[:, i, j])
             interp_frame[k] = k_int
         self._interp_frame_ = interp_frame
 
