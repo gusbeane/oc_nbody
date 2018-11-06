@@ -19,9 +19,14 @@ from amuse.units import units
 from tqdm import tqdm
 
 class agama_wrapper(object):
-    def __init__(self, opt):
+    def __init__(self, opt, agama_interpolator=None):
         opt.set_options(self)
         agama.setUnits(mass=1, length=1, velocity=1)
+        if agama_interpolator is not None:
+            self._tevolv_ = True
+            self.ai = agama_interpolator
+        else:
+            self._tevolv_ = False
 
     def update_index(self, index, ss_id=None, snap=None):
         agama.setUnits(mass=1, length=1, velocity=1)
@@ -102,6 +107,10 @@ class agama_wrapper(object):
         else:
             self.chosen_velocity = self.snap['star'].prop(
                 'host.velocity.principal')[ss_key]
+
+    def update_t(self, t):
+        self.potential = self.ai(t)
+        self.af = agama.ActionFinder(self.potential, interp=False)
 
     def actions(self, poslist, vlist, add_ss=False, in_kpc=False):
         if not in_kpc:
