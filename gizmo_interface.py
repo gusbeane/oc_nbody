@@ -122,18 +122,18 @@ class gizmo_interface(object):
         else:
             pot_file_list = (self._pot_cache_file_(self.startnum),)
 
-        for file in pot_file_list:
+        for i,file in enumerate(pot_file_list):
             try:
                 self.pdark = agama.Potential(file=file)
                 self.pbar = agama.Potential(file=file)
             except:
-                star_position = self.snapshots[index]['star'].prop('host.distance.principal')
-                gas_position = self.snapshots[index]['gas'].prop('host.distance.principal')
-                dark_position = self.snapshots[index]['dark'].prop('host.distance.principal')
+                star_position = self.snapshots[i]['star'].prop('host.distance.principal')
+                gas_position = self.snapshots[i]['gas'].prop('host.distance.principal')
+                dark_position = self.snapshots[i]['dark'].prop('host.distance.principal')
 
-                star_mass = self.snapshots[index]['star']['mass']
-                gas_mass = self.snapshots[index]['gas']['mass']
-                dark_mass = self.snapshots[index]['dark']['mass']
+                star_mass = self.snapshots[i]['star']['mass']
+                gas_mass = self.snapshots[i]['gas']['mass']
+                dark_mass = self.snapshots[i]['dark']['mass']
 
                 position = np.concatenate((star_position, gas_position))
                 mass = np.concatenate((star_mass, gas_mass))
