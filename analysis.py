@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib import rc
 from matplotlib.animation import FuncAnimation
 from amuse.units import units
+from oceanic.oc_code import agama_interpolator
 
 import agama
 import gizmo_analysis as gizmo
@@ -19,12 +20,13 @@ from amuse.units import units
 from tqdm import tqdm
 
 class agama_wrapper(object):
-    def __init__(self, opt, agama_interpolator=None):
+    def __init__(self, opt, ai_bar=None, ai_dark=None):
         opt.set_options(self)
         agama.setUnits(mass=1, length=1, velocity=1)
-        if agama_interpolator is not None:
+        if ai_bar is not None:
             self._tevolv_ = True
-            self.ai = agama_interpolator
+            self.ai_bar = ai_bar
+            self.ai_dark = ai_dark
         else:
             self._tevolv_ = False
 
@@ -109,7 +111,7 @@ class agama_wrapper(object):
                 'host.velocity.principal')[ss_key]
 
     def update_t(self, t):
-        self.potential = self.ai(t)
+        self.potential = agama.Potential(self.ai_bar(t), self.ai_dark(t))
         self.af = agama.ActionFinder(self.potential, interp=False)
 
     def actions(self, poslist, vlist, add_ss=False, in_kpc=False):
@@ -134,7 +136,28 @@ class snapshot_action_calculator(object):
     def __init__(self, options,
                  snapshot_file='cluster_snapshots.p', ss_id=None):
         options.set_options(self)
-        self._ag_ = agama_wrapper(options)
+        if self.axisymmetric and self.axisymmetric_tevolve:
+            self.snapshot_indices = range(self.startnum-self.num_prior,
+                                    self.endnum+1)
+            bar_pot_file_list = [self._pot_cache_file_(idx)+'_bar' for idx in self.snapshot_indices]
+            dark_pot_file_list = [self._pot_cache_file_(idx)+'_dark' for idx in self.snapshot_indices]
+
+            # this is super HACK REMOVE LATER
+            times = np.array([-115.8504706 ,  -92.63957108,  -69.44795275,  -46.27842465,
+                    -23.12813136,    0.        ,   23.10883172,   46.1969427 ,
+                    69.26290834,   92.30948518,  115.33385582,  138.33889978,
+                    161.32179752,  184.28531886,  207.22792558,  230.14842604,
+                    253.04948307,  275.92827117,  298.7875761 ,  321.62468715,
+                    344.44239663,  367.23916522,  390.01368478,  412.76875691,
+                    435.50154821,  458.21486641,  480.90587581,  503.57739022,
+                    526.2279869 ,  548.85635795,  571.46520833,  594.05169667,
+                    616.61865172,  639.16334823,  661.68850265,  684.19138768,
+                    706.67472541,  729.13709214])
+
+            ai_bar = agama_interpolator(bar_pot_file_list, times)
+            ai_dark = agama_interpolator(dark_pot_file_list, times)
+
+            self._ag_ = agama_wrapper(options, ai_bar = ai_bar, ai_dark=ai_dark)
 
         try:
             self.cluster = dill.load(open(snapshot_file, 'rb'))
@@ -152,6 +175,11 @@ class snapshot_action_calculator(object):
                                     please specify ss id')
         else:
             self.ss_id = ss_id
+
+    def _pot_cache_file_(self, index):
+        potential_cache_file = self.cache_directory + '/potential_id'+str(index)
+        potential_cache_file += '_' + self.sim_name + '_pot'
+        return potential_cache_file
 
     def snapshot_actions(self, fileout='cluster_snapshots_snap_actions.npy',
                          start=None, end=None):
