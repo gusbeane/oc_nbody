@@ -111,7 +111,9 @@ class agama_wrapper(object):
                 'host.velocity.principal')[ss_key]
 
     def update_t(self, t):
-        self.potential = agama.Potential(self.ai_bar(t), self.ai_dark(t))
+        bar_pot = agama.Potential(file=self.ai_bar(t))
+        dark_pot = agama.Potential(file=self.ai_dark(t))
+        self.potential = agama.Potential(bar_pot, dark_pot)
         self.af = agama.ActionFinder(self.potential, interp=False)
 
     def actions(self, poslist, vlist, add_ss=False, in_kpc=False):
