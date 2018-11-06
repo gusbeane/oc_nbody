@@ -65,6 +65,8 @@ def run_worker_z(t, i):
 class gizmo_interface(object):
     def __init__(self, options_reader, grid_snapshot=None):
 
+        agama.setUnits(mass=1, length=1, velocity=1)
+
         self.G = G_astropy.to_value(u.kpc**2 * u.km / (u.s * u.Myr * u.Msun))
         self.theta = 0.5
 
