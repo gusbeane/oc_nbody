@@ -24,6 +24,7 @@ class snapshot_reader(object):
         if not self.axisymmetric:
             self.frames.meta['ss_id'] = galaxy_code.chosen_id
             self.frames.meta['snapshot_times'] = galaxy_code.time_in_Myr
+            self.frames.meta['sim_name'] = galaxy_code.sim_name
         self.frames.meta['simulation_directory'] = galaxy_code.simulation_directory
 
     def process_snapshot(self, system, galaxy_code, com, i, time, final=None):

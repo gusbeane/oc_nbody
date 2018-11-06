@@ -136,14 +136,30 @@ class snapshot_action_calculator(object):
     def __init__(self, options,
                  snapshot_file='cluster_snapshots.p', ss_id=None):
         options.set_options(self)
+
+        try:
+            self.cluster = dill.load(open(snapshot_file, 'rb'))
+        except:
+            raise Exception('could not find snapshot file: ', snapshot_file)
+
         if self.axisymmetric and self.axisymmetric_tevolve:
             self.snapshot_indices = range(self.startnum-self.num_prior,
                                     self.endnum+1)
+
+            # super HACK, remove LATER
+            try:
+                self.sim_name = self.cluster.meta['sim_name']
+            except:
+                self.sim_name = 'm12i_r7100'
+
             bar_pot_file_list = [self._pot_cache_file_(idx)+'_bar' for idx in self.snapshot_indices]
             dark_pot_file_list = [self._pot_cache_file_(idx)+'_dark' for idx in self.snapshot_indices]
 
             # this is super HACK REMOVE LATER
-            times = np.array([-115.8504706 ,  -92.63957108,  -69.44795275,  -46.27842465,
+            try:
+                times = self.cluster.meta['snapshot_times']
+            except:
+                times = np.array([-115.8504706 ,  -92.63957108,  -69.44795275,  -46.27842465,
                     -23.12813136,    0.        ,   23.10883172,   46.1969427 ,
                     69.26290834,   92.30948518,  115.33385582,  138.33889978,
                     161.32179752,  184.28531886,  207.22792558,  230.14842604,
@@ -158,11 +174,6 @@ class snapshot_action_calculator(object):
             ai_dark = agama_interpolator(dark_pot_file_list, times)
 
             self._ag_ = agama_wrapper(options, ai_bar = ai_bar, ai_dark=ai_dark)
-
-        try:
-            self.cluster = dill.load(open(snapshot_file, 'rb'))
-        except:
-            raise Exception('could not find snapshot file: ', snapshot_file)
 
         if self.axisymmetric:
             return None
