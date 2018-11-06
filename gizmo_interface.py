@@ -117,7 +117,7 @@ class gizmo_interface(object):
         return potential_cache_file
 
     def _gen_axisymmetric_(self, all_snaps=False):
-        import agama
+        agama.setUnits(mass=1, length=1, velocity=1)
         if all_snaps:
             pot_file_list = []
             for index in self.snapshot_indices:
