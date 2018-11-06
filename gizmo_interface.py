@@ -679,7 +679,7 @@ class gizmo_interface(object):
         if self.axisymmetric:
             pos = np.transpose([xlist, ylist, zlist])
             acc = self.potential.force(pos)
-            if len(pos)==1:
+            if len(np.shape(pos))==1:
                 ax = acc[0] | (units.kms)**2/units.kpc
                 ay = acc[1] | (units.kms)**2/units.kpc
                 az = acc[2] | (units.kms)**2/units.kpc
