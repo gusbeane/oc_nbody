@@ -167,7 +167,7 @@ class gizmo_interface(object):
     def _agama_potential_(self, t):
         bar_pot = agama.Potential(file=self.bar_agamaint(t))
         dark_pot = agama.Potential(file=self.dark_agamaint(t))
-        self.potential = agama.Potential(bar_pot, dark_pot)
+        return agama.Potential(bar_pot, dark_pot)
 
     def _read_snapshots_(self, first_only=False):
         # read in first snapshot, get rotation matrix
