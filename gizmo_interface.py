@@ -816,6 +816,9 @@ class gizmo_interface(object):
             # return pos[chosen_one], vel[chosen_one], chosen_one, chosen_id
             return pos[chosen_one], chosen_one, chosen_id
 
+    def gen_all_agama(self):
+        self._gen_axisymmetric_(all_snaps=True)
+
     def __getstate__(self):
         self_dict = self.__dict__.copy()
         del self_dict['acc_pool']
