@@ -287,7 +287,7 @@ class cluster_animator(object):
                  pLz_bound=2.0, pJr_bound=0.6, pJz_bound=0.1, normalize=False,
                  plot_cluster_com=False, com_rcut=None, color_by_dist=True,
                  dist_vmin = 0.0, dist_vmax=50.0, log_distance=False,
-                 axisymmetric=False):
+                 axisymmetric=False, action_alpha=True):
 
         rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
         rc('text', usetex=True)
@@ -394,12 +394,16 @@ class cluster_animator(object):
 
             first_actions = self.snapshots[self.start]['actions']
             pecact = self._peculiar_actions_(first_actions)
+            if self.action_alpha and self.color_by_dist:
+                alpha = (c + self.dist_vmin)/(self.dist_vmax - self.dist_vmin) + 0.2
+            else:
+                alpha = None
             self.scat_pJr = self.ax_pJr.scatter(pecact[:,2], pecact[:,0],
                                                 s=0.2, c=c, vmin=self.dist_vmin,
-                                                vmax=self.dist_vmax)
+                                                vmax=self.dist_vmax, alpha=alpha)
             self.scat_pJz = self.ax_pJz.scatter(pecact[:,2], pecact[:,1],
                                                 s=0.2, c=c, vmin=self.dist_vmin,
-                                                vmax=self.dist_vmax)
+                                                vmax=self.dist_vmax, alpha=alpha)
 
             if self.axisymmetric:
                 self.traj = \
@@ -566,6 +570,10 @@ class cluster_animator(object):
             if self.color_by_dist:
                 self.scat_pJr.set_array(c)
                 self.scat_pJz.set_array(c)
+                if self.action_alpha
+                    alpha = (c - self.dist_vmin)/(self.dist_vmax - self.dist_vmin) + 0.2
+                    self.scat_pJr.set_alpha(alpha)
+                    self.scat_pJz.set_alpha(alpha)
 
             x = self.traj[:,0]
             y = self.traj[:,1]
